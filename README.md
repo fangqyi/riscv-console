@@ -1,5 +1,6 @@
+### PLEASE USE riscv-firmware AND riscv-cart FOR IMPLEMENTATION.
 
-# RISC-V Console Simulator
+# RISC-V Console Simulator (Group 5)
 
 This project is a simulator for a hypothetical RISC-V based game console. The repository provides Dockerfiles to build the necessary RISC-V toolchain for firmware and/or "game" development. The simulator was developed for use in UC Davis' Computer Science courses; however, any other educators are highly encouraged to take this repository and modify it to meet the needs of your class.
 
