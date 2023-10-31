@@ -97,7 +97,7 @@ volatile uint32_t *SMALL_SPRITE_PALLETE = (volatile uint32_t *)(0x500F3000);
 volatile uint32_t *FONT_DATA = (volatile uint32_t *)(0x500F4000); 
 
 // mem map for text data 0x900 (2.25KiB)
-volatile uint32_t *TEXT_DATA = (volatile uint32_t *)(0x500F4800); 
+volatile char *TEXT_DATA = (volatile char *)(0x500F4800); 
 
 // mem map for text color 0x900 (2.25KiB)
 volatile uint32_t *TEXT_COLOR = (volatile uint32_t *)(0x500F5100); 
@@ -158,14 +158,11 @@ void switch_mode(uint32_t mode){
 }
 
 void simple_display_text(char *new_text, uint32_t start_idx){
-    if (start > 0x900) return;
+    uint32_t bounds  = 0x900>>2;
 
-    char *dest = &TEXT_DATA[start_idx];
-    char *src = new_text;
-    while(*src != '\0'){
-        *dest = *src;
-        src++;
-        dest++;
+    uint32_t offset = 0;
+    while (new_text[offset] != "\0" && start_idx + offset < bounds){
+        TEXT_DATA[start_idx + offset] = new_text[offset++];
     }
 }
 
