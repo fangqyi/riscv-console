@@ -24,8 +24,7 @@ int main(){
 extern char _heap_base[];
 extern char _stack[];
 
-char *_sbrk(int numbytes)
-{
+char *_sbrk(int numbytes){
   static char *heap_ptr = NULL;
   char *base;
 

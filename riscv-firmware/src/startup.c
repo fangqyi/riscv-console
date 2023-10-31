@@ -56,7 +56,7 @@ __attribute__((always_inline)) inline void csr_disable_interrupts(void){
     asm volatile ("csrci mstatus, 0x8");
 }
 
-//chipset
+//chipset macros
 //TODO: not done
 #define MTIME_LOW       (*((volatile uint32_t *)0x40000008)) // machine time 
 #define MTIME_HIGH      (*((volatile uint32_t *)0x4000000C)) 
@@ -66,9 +66,9 @@ __attribute__((always_inline)) inline void csr_disable_interrupts(void){
 //video controller
 #define MODE_CONTROL    (*((volatile uint32_t *)0x500F6780)) // mode control register
 #define TEXT_MODE       0x0
-#define GRAPHICS_MODE       0x1
+#define GRAPHICS_MODE   0x1
 
-/*-----------------------------------mem map of video controller-------------------------------*/     
+/*-----------------------------------mem maps of video controller-------------------------------*/     
 // mem map for bacground data 0x90000 (576KiB)
 volatile uint32_t *BACKGROUND_DATA= (volatile uint32_t *)(0x50000000); 
 
@@ -143,12 +143,29 @@ extern volatile int global;
 extern volatile uint32_t controller_status;
 
 void c_interrupt_handler(void){
-    uint64_t NewCompare = (((uint64_t)MTIMECMP_HIGH)<<32) | MTIMECMP_LOW;
-    NewCompare += 100;
-    MTIMECMP_HIGH = NewCompare>>32;
-    MTIMECMP_LOW = NewCompare;
+    uint64_t new_compare = (((uint64_t)MTIMECMP_HIGH)<<32) | MTIMECMP_LOW;
+    new_compare += 100;
+    MTIMECMP_HIGH = new_compare>>32;
+    MTIMECMP_LOW = new_compare;
     global++;
     controller_status = CONTROLLER;
 }
 
 //TODO: implement set functions on memmaps for video controllers
+
+void switch_mode(uint32_t mode){
+    MODE_CONTROL = (mode == 0) ? TEXT_MODE : GRAPHICS_MODE;
+}
+
+void simple_display_text(char *new_text, uint32_t start_idx){
+    if (start > 0x900) return;
+
+    char *dest = &TEXT_DATA[start_idx];
+    char *src = new_text;
+    while(*src != '\0'){
+        *dest = *src;
+        src++;
+        dest++;
+    }
+}
+

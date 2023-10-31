@@ -30,7 +30,7 @@ CFLAGS   += -ffreestanding  -nostartfiles
 LDFLAGS  +=
 LDFLAGS  += -Wl,--gc-sections -Wl,-T,$(LDFILE)
 
-TARGET_NAME = riscv-console-example
+TARGET_NAME = riscv-firmware
 
 TARGET_OBJS =   $(OBJ_DIR)/main.o               \
                 $(OBJ_DIR)/crt0.o               \
