@@ -1,0 +1,154 @@
+#include <stdint.h>
+
+extern uint8_t _erodata[];
+extern uint8_t _data[];
+extern uint8_t _edata[];
+extern uint8_t _sdata[];
+extern uint8_t _esdata[];
+extern uint8_t _bss[];
+extern uint8_t _ebss[];
+    
+
+// Adapted from https://stackoverflow.com/questions/58947716/how-to-interact-with-risc-v-csrs-by-using-gcc-c-code
+//turn manipulations on risc-v Control and Status Registers (CSR) to callable functions with c
+
+
+// Read the `mstatus` CSR (Machine Status Register).
+//
+// The `mstatus` register holds the machine's current operating state. It
+// contains various control and status fields which include interrupt enable 
+// bits, privilege mode selection, etc.
+__attribute__((always_inline)) inline uint32_t csr_mstatus_read(void){
+    uint32_t result;
+    asm volatile ("csrr %0, mstatus" : "=r"(result));
+    return result;
+}
+
+// Write to the `mstatus` CSR.
+//
+// This function is used to modify the machine's current operating state 
+// by updating the various control and status fields in the `mstatus` register.
+__attribute__((always_inline)) inline void csr_mstatus_write(uint32_t val){
+    asm volatile ("csrw mstatus, %0" : : "r"(val));
+}
+
+// Write to the `mie` CSR (Machine Interrupt Enable Register).
+//
+// The `mie` register holds interrupt enable bits for the machine mode. 
+// Setting specific bits in this register enables corresponding interrupts.
+__attribute__((always_inline)) inline void csr_write_mie(uint32_t val){
+    asm volatile ("csrw mie, %0" : : "r"(val));
+}
+
+// Enable machine mode interrupts.
+//
+// This function sets the `mie` bit in the `mstatus` register, 
+// which allows machine mode interrupts to be handled when they occur.
+__attribute__((always_inline)) inline void csr_enable_interrupts(void){
+    asm volatile ("csrsi mstatus, 0x8");
+}
+
+// Disable machine mode interrupts.
+//
+// This function clears the `mie` bit in the `mstatus` register, 
+// preventing machine mode interrupts from being handled.
+__attribute__((always_inline)) inline void csr_disable_interrupts(void){
+    asm volatile ("csrci mstatus, 0x8");
+}
+
+//chipset
+//TODO: not done
+#define MTIME_LOW       (*((volatile uint32_t *)0x40000008)) // machine time 
+#define MTIME_HIGH      (*((volatile uint32_t *)0x4000000C)) 
+#define MTIMECMP_LOW    (*((volatile uint32_t *)0x40000010)) // machine time compare
+#define MTIMECMP_HIGH   (*((volatile uint32_t *)0x40000014))
+#define CONTROLLER      (*((volatile uint32_t *)0x40000018)) // multi-button constroller status register
+//video controller
+#define MODE_CONTROL    (*((volatile uint32_t *)0x500F6780)) // mode control register
+#define TEXT_MODE       0x0
+#define GRAPHICS_MODE       0x1
+
+/*-----------------------------------mem map of video controller-------------------------------*/     
+// mem map for bacground data 0x90000 (576KiB)
+volatile uint32_t *BACKGROUND_DATA= (volatile uint32_t *)(0x50000000); 
+
+// mem map for large sprite data 0x40000 (256KiB)
+volatile uint32_t *LARGE_SPRITE_DATA= (volatile uint32_t *)(0x50090000); 
+
+// mem map for memdium sprite data 0x10000 (64KiB)
+volatile uint32_t *MEDIUM_SPRITE_DATA= (volatile uint32_t *)(0x500D0000); 
+
+// mem map for small sprite data 0x10000 (64KiB)
+volatile uint32_t *SMALL_SPRITE_DATA= (volatile uint32_t *)(0x500E0000); 
+
+// mem map for background pallete 0x1000 (4KiB)
+volatile uint32_t *BACKGROUND_PALLETE= (volatile uint32_t *)(0x500F0000); 
+
+// mem map for large sprite pallete 0x1000 (4KiB)
+volatile uint32_t *LARGE_SPRITE_PALLETE = (volatile uint32_t *)(0x500F1000); 
+
+// mem map for medium sprite pallete 0x1000 (4KiB)
+volatile uint32_t *MEDIUM_SPRITE_PALLETE = (volatile uint32_t *)(0x500F2000); 
+
+// mem map for small sprite pallete 0x1000 (4KiB)
+volatile uint32_t *SMALL_SPRITE_PALLETE = (volatile uint32_t *)(0x500F3000); 
+
+// mem map for font data 0x800 (2KiB)
+volatile uint32_t *FONT_DATA = (volatile uint32_t *)(0x500F4000); 
+
+// mem map for text data 0x900 (2.25KiB)
+volatile uint32_t *TEXT_DATA = (volatile uint32_t *)(0x500F4800); 
+
+// mem map for text color 0x900 (2.25KiB)
+volatile uint32_t *TEXT_COLOR = (volatile uint32_t *)(0x500F5100); 
+
+// mem map for background controls 0x100(256B)
+volatile uint32_t *BACKGROUND_CONTROL = (volatile uint32_t *)(0x500F5A00); 
+
+// mem map for large sprite control 0x400 (1KiB)
+volatile uint32_t *LARGE_SPRITE_CONTROL = (volatile uint32_t *)(0x500F5B00); 
+
+// mem map for medium sprite control 0x400 (1KiB)
+volatile uint32_t *MEDIUM_SPRITE_CONTROL = (volatile uint32_t *)(0x500F5F00); 
+
+// mem map for small sprite control 0x400 (1KiB)
+volatile uint32_t *SMALL_SPRITE_CONTROL = (volatile uint32_t *)(0x500F6300); 
+
+// mem map for small sprite pallete 0x80 (128B)
+volatile uint32_t *TEXT_PALLETE = (volatile uint32_t *)(0x500F6700); 
+
+/*--------------------------------------------------------------------------------------------*/     
+
+void init(void){
+    uint8_t *Source = _erodata;
+    uint8_t *Base = _data < _sdata ? _data : _sdata;
+    uint8_t *End = _edata > _esdata ? _edata : _esdata;
+
+    while(Base < End){
+        *Base++ = *Source++;
+    }
+    Base = _bss;
+    End = _ebss;
+    while(Base < End){
+        *Base++ = 0;
+    }
+
+    csr_write_mie(0x888);       // Enable all interrupt soruces
+    csr_enable_interrupts();    // Global interrupt enable
+    MTIMECMP_LOW = 1;
+    MTIMECMP_HIGH = 0;
+}
+
+extern volatile int global;
+extern volatile uint32_t controller_status;
+
+void c_interrupt_handler(void){
+    uint64_t NewCompare = (((uint64_t)MTIMECMP_HIGH)<<32) | MTIMECMP_LOW;
+    NewCompare += 100;
+    MTIMECMP_HIGH = NewCompare>>32;
+    MTIMECMP_LOW = NewCompare;
+    global++;
+    controller_status = CONTROLLER;
+}
+
+//TODO: implement set functions on memmaps for video controllers
