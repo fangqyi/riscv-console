@@ -59,15 +59,17 @@ __attribute__((always_inline)) inline void csr_disable_interrupts(void){
 
 //chipset macros
 //TODO: not done
-#define MTIME_LOW       (*((volatile uint32_t *)0x40000008)) // machine time 
-#define MTIME_HIGH      (*((volatile uint32_t *)0x4000000C)) 
-#define MTIMECMP_LOW    (*((volatile uint32_t *)0x40000010)) // machine time compare
-#define MTIMECMP_HIGH   (*((volatile uint32_t *)0x40000014))
-#define CONTROLLER      (*((volatile uint32_t *)0x40000018)) // multi-button constroller status register
+#define INTERRUPT_ENABLE  (*((volatile uint32_t *)0x40000000)) // interrupt enable register
+#define INTERRUPT_PENDING (*((volatile uint32_t *)0x40000004)) // interrupt pending Register
+#define MTIME_LOW         (*((volatile uint32_t *)0x40000008)) // machine time 
+#define MTIME_HIGH        (*((volatile uint32_t *)0x4000000C)) 
+#define MTIMECMP_LOW      (*((volatile uint32_t *)0x40000010)) // machine time compare
+#define MTIMECMP_HIGH     (*((volatile uint32_t *)0x40000014))
+#define CONTROLLER        (*((volatile uint32_t *)0x40000018)) // multi-button constroller status register
 //video controller
-#define MODE_CONTROL    (*((volatile uint32_t *)0x500F6780)) // mode control register
-#define TEXT_MODE       0x0
-#define GRAPHICS_MODE   0x1
+#define MODE_CONTROL     (*((volatile uint32_t *)0x500F6780)) // mode control register
+#define TEXT_MODE        0x0
+#define GRAPHICS_MODE    0x1
 
 /*-----------------------------------mem maps of video controller-------------------------------*/     
 // mem map for bacground data 0x90000 (576KiB)
@@ -134,7 +136,11 @@ void init(void){
         *Base++ = 0;
     }
 
-    csr_write_mie(0x888);       // Enable all interrupt soruces
+    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x1; // enable cartidge interrupts
+    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x2; // enable video interrupts
+    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x4; // enable command interrupts
+
+    csr_write_mie(0x888);       // Enable all interrupt sources ^ is the above still necessary
     csr_enable_interrupts();    // Global interrupt enable
     MTIMECMP_LOW = 1;
     MTIMECMP_HIGH = 0;
@@ -142,7 +148,7 @@ void init(void){
 
 extern volatile int global;
 extern volatile uint32_t controller_status;
-volatile uint32_t time_elapsed;
+volatile uint32_t interrupt_pending_reg;
 
 void c_interrupt_handler(void){
     uint64_t new_compare = (((uint64_t)MTIMECMP_HIGH)<<32) | MTIMECMP_LOW;
@@ -151,6 +157,14 @@ void c_interrupt_handler(void){
     MTIMECMP_LOW = new_compare;
     global++;
     controller_status = CONTROLLER;
+    interrupt_pending_reg = INTERRUPT_PENDING;
+    INTERRUPT_PENDING = INTERRUPT_PENDING & 0x4; // clear command interrupts
+    INTERRUPT_PENDING = INTERRUPT_PENDING & 0x2; // clear video interrupts
+    // INTERRUPT_PENDING = INTERRUPT_PENDING & 0x1; // clear cartidge interrupts
+}
+
+uint32_t get_interrupt_pending_reg(){
+    return interrupt_pending_reg;  // TODO: separate for command and video interrupts
 }
 
 uint64_t get_machine_time(){
@@ -189,7 +203,7 @@ void set_text_background_control(
     uint8_t z, 
     uint8_t palette_idx
 ){
-    BACKGROUND_CONTROL[control_idx] = (1 << 31) | (tile_idx << 28) | (sub_idx << 25) | (z << 22) | (y << 12) | (x << 2) | palette_idx;
+    BACKGROUND_CONTROL[control_idx] = (1 << 31) | (tile_idx << 28) | (sub_idx << 25) | (z << 22) | ((y+288) << 12) | ((x+512) << 2) | palette_idx;
 }
 
 void set_background_palette(uint8_t palette_idx, uint32_t* data) {
@@ -211,7 +225,7 @@ void set_small_sprite_control(
     uint16_t z,
     uint8_t palette_idx
 ){
-    SMALL_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | (y << 12) | (x << 2) | palette_idx;
+    SMALL_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | ((y+16) << 12) | ((x+16) << 2) | palette_idx;
 }
 
 void set_small_sprite_palette(uint8_t palette_idx, uint32_t* data) {
@@ -233,7 +247,7 @@ void set_medium_sprite_control(
     uint16_t z,
     uint8_t palette_idx
 ){
-    MEDIUM_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | (y << 12) | (x << 2) | palette_idx;
+    MEDIUM_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | ((y+32) << 12) | ((x+32) << 2) | palette_idx;
 }
 
 void set_medium_sprite_palette(uint8_t palette_idx, uint32_t* data) {
@@ -255,7 +269,7 @@ void set_large_sprite_control(
     uint16_t z,
     uint8_t palette_idx
 ){
-    LARGE_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | (y << 12) | (x << 2) | palette_idx;
+    LARGE_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | ((y+64) << 12) | ((x+64) << 2) | palette_idx;
 }
 
 void set_large_sprite_palette(uint8_t palette_idx, uint32_t* data) {
