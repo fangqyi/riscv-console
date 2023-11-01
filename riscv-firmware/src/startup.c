@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 
 extern uint8_t _erodata[];
 extern uint8_t _data[];
@@ -157,7 +158,7 @@ uint32_t get_controller_status() {
 
 // controls for background
 void set_pixel_background_data(uint8_t image_idx, char* data) {
-    char* dst = ((char*)BACKGROUND_DATA)[image*0x24000];
+    char* dst = ((char*)BACKGROUND_DATA)+image_idx*0x24000;
     memcpy(dst, data, 0x24000);
 }
 
@@ -187,13 +188,13 @@ void set_text_background_control(
 }
 
 void set_background_palette(uint8_t palette_idx, uint32_t* data) {
-    uint32_t dst = (uint32_t*)((char*)BACKGROUND_PALETTE[palette_idx*0x400])
+    char* dst = ((char*)BACKGROUND_PALETTE)+palette_idx*0x400;
     memcpy(dst, data, 0x400);
 }
 
 // controls for small sprites
 void set_small_sprite_data(uint8_t sprite_idx, uint8_t* data){
-    char* dst = ((char*)SMALL_SPRITE_DATA)[sprite_idx*0x100];
+    char* dst = ((char*)SMALL_SPRITE_DATA)+sprite_idx*0x100;
     memcpy(dst, data, 0x100);
 }
 
@@ -203,19 +204,19 @@ void set_small_sprite_control(
     uint16_t x,
     uint16_t y,
     uint16_t z,
-    uint8_t palette_idx,
+    uint8_t palette_idx
 ){
     SMALL_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | (y << 12) | (x << 2) | palette_idx;
 }
 
 void set_small_sprite_palette(uint8_t palette_idx, uint32_t* data) {
-    uint32_t dst = (uint32_t*)((char*)SMALL_SPRITE_PALETTE[palette_idx*0x400])
+    char* dst = ((char*)SMALL_SPRITE_PALETTE)+palette_idx*0x400;
     memcpy(dst, data, 0x400);
 }
 
 // controls for medium sprites
 void set_medium_sprite_data(uint8_t sprite_idx, uint8_t* data){
-    char* dst = ((char*)MEDIUM_SPRITE_DATA)[sprite_idx*0x400];
+    char* dst = ((char*)MEDIUM_SPRITE_DATA)+sprite_idx*0x400;
     memcpy(dst, data, 0x400);
 }
 
@@ -225,19 +226,19 @@ void set_medium_sprite_control(
     uint16_t x,
     uint16_t y,
     uint16_t z,
-    uint8_t palette_idx,
+    uint8_t palette_idx
 ){
     MEDIUM_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | (y << 12) | (x << 2) | palette_idx;
 }
 
 void set_medium_sprite_palette(uint8_t palette_idx, uint32_t* data) {
-    uint32_t dst = (uint32_t*)((char*)MEDIUM_SPRITE_PALETTE[palette_idx*0x400])
+    char* dst = ((char*)MEDIUM_SPRITE_PALETTE)+palette_idx*0x400;
     memcpy(dst, data, 0x400);
 }
 
 // controls for large sprites
 void set_large_sprite_data(uint8_t sprite_idx, uint8_t* data){
-    char* dst = ((char*)LARGE_SPRITE_DATA)[sprite_idx*0x1000];
+    char* dst = ((char*)LARGE_SPRITE_DATA)+sprite_idx*0x1000;
     memcpy(dst, data, 0x1000);
 }
 
@@ -247,13 +248,13 @@ void set_large_sprite_control(
     uint16_t x,
     uint16_t y,
     uint16_t z,
-    uint8_t palette_idx,
+    uint8_t palette_idx
 ){
     LARGE_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | (y << 12) | (x << 2) | palette_idx;
 }
 
 void set_large_sprite_palette(uint8_t palette_idx, uint32_t* data) {
-    uint32_t dst = (uint32_t*)((char*)LARGE_SPRITE_PALETTE[palette_idx*0x400])
+    char* dst = ((char*)LARGE_SPRITE_PALETTE)+palette_idx*0x400;
     memcpy(dst, data, 0x400);
 }
 
@@ -265,7 +266,7 @@ void simple_display_text(char *new_text, uint32_t start_idx){
     uint32_t bounds  = 0x900>>2;
 
     uint32_t offset = 0;
-    while (new_text[offset] != "\0" && start_idx + offset < bounds){
+    while (new_text[offset] != '\0' && start_idx + offset < bounds){
         TEXT_DATA[start_idx + offset] = new_text[offset++];
     }
 }
