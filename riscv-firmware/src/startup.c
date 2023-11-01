@@ -142,6 +142,7 @@ void init(void){
 
 extern volatile int global;
 extern volatile uint32_t controller_status;
+volatile uint32_t time_elapsed;
 
 void c_interrupt_handler(void){
     uint64_t new_compare = (((uint64_t)MTIMECMP_HIGH)<<32) | MTIMECMP_LOW;
@@ -150,6 +151,10 @@ void c_interrupt_handler(void){
     MTIMECMP_LOW = new_compare;
     global++;
     controller_status = CONTROLLER;
+}
+
+uint64_t get_machine_time(){
+    return (((uint64_t)MTIME_HIGH)<<32) | MTIME_LOW;
 }
 
 uint32_t get_controller_status() {
