@@ -364,7 +364,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
 
         case SWITCH_MODE:
             if (param[1] == 0 || param[1] == 1) {
-                switch_mode(param[1]);
+                switch_mode((uint32_t) param[1]);
                 return 0;  // Success
             } else {
                 // Handle invalid mode value
@@ -372,12 +372,12 @@ uint32_t c_syscall(uint32_t* param, char* params) {
             }
 
         case SET_BACKGROUND:
-           setBackground(param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9], param[10], param[11]);
+           setBackground((uint8_t) param[1], (char*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint8_t) param[5], (uint8_t) param[6], (uint16_t) param[7], (uint16_t) param[8], (uint8_t) param[9], (uint8_t) param[10],(uint32_t*) param[11]);
             return 0;
             
         case DISPLAY_TEXT:
             if (params != NULL) {
-                simple_display_text(params, param[1]);
+                simple_display_text((char*) params, (uint32_t) param[1]);
                 return 0;  // Success
             } else {
                 // Handle invalid params pointer
@@ -386,17 +386,17 @@ uint32_t c_syscall(uint32_t* param, char* params) {
 
         case SET_SMALL_SPRITE:
             // Validate parameters and call setSmallSprite
-            setSmallSprite(param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9]);
+            setSmallSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
             return 0;  // Success
 
         case SET_MEDIUM_SPRITE:
             // Validate parameters and call setLargeSprite
-            setMediumSprite(param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9]);
+            setMediumSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
             return 0;  // Success
 
         case SET_LARGE_SPRITE:
             // Validate parameters and call setLargeSprite
-            setLagreSprite(param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9]);
+            setLagreSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
             return 0;  // Success
 
         default:
