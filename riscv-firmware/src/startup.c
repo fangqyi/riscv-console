@@ -282,9 +282,9 @@ void set_large_sprite_palette(uint8_t palette_idx, uint32_t* data) {
 
 /* ADDED new functions below */
 /* the type of control_ind is int or unit8_t */
-void setBackground(uint8_t image_idx, char* bg_pixel_data, unit8_t control_idx, uint8_t px_idx, uint8_t tile_idx, uint8_t sub_idx, uint16_t x, uint16_t y, uint8_t z,  uint8_t palette_idx, uint32_t* data) {
+void setBackground(uint8_t image_idx, char* bg_pixel_data, uint8_t control_idx, uint8_t px_idx, uint8_t tile_idx, uint8_t sub_idx, uint16_t x, uint16_t y, uint8_t z,  uint8_t palette_idx, uint32_t* data) {
     set_pixel_background_data(image_idx, bg_pixel_data);
-    set_pixel_background_control(control_ind, px_idx, x, y, z, palette_idx);
+    set_pixel_background_control(control_idx, px_idx, x, y, z, palette_idx);
     set_tile_background_control(control_idx, tile_idx, sub_idx, x, y, z, palette_idx);
     set_background_palette(palette_idx, data);
 }
@@ -380,17 +380,17 @@ uint32_t c_syscall(uint32_t* param, char* params) {
 
         case SET_SMALL_SPRITE:
             // Validate parameters and call setSmallSprite
-            setSmallSprite(param[0], param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9]);
+            setSmallSprite(param[0], param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8]);
             return 0;  // Success
 
         case SET_MEDIUM_SPRITE:
             // Validate parameters and call setLargeSprite
-            setMediumSprite(param[0], param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9]);
+            setMediumSprite(param[0], param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8]);
             return 0;  // Success
 
         case SET_LARGE_SPRITE:
             // Validate parameters and call setLargeSprite
-            setLagreSprite(param[0], param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8], param[9]);
+            setLagreSprite(param[0], param[1], param[2], param[3], param[4], param[5], param[6], param[7], param[8]);
             return 0;  // Success
 
         default:
