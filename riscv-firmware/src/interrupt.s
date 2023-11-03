@@ -1,10 +1,10 @@
 .section .text, "ax"
-.global _c_syscall_handler
-_c_syscall_handler:
+.global _interrupt_handler
+_interrupt_handler:
     csrw    mscratch,ra
     csrr    ra,mcause
     addi    ra,ra,-11
-    bnez    ra,_interrupt_handler
+    bnez    ra,c_syscall_handle
     csrr    ra,mscratch
     csrw    mepc,ra
     csrw    mscratch,gp
@@ -16,7 +16,7 @@ _c_syscall_handler:
     csrr    gp,mscratch
     csrr    ra,mepc
     mret
-_interrupt_handler:
+c_syscall_handle:
     csrr    ra,mscratch
     addi	sp,sp,-44
     sw      gp,40(sp)
