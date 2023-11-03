@@ -167,8 +167,13 @@ uint32_t get_interrupt_pending_reg(){
     return interrupt_pending_reg;  // TODO: separate for command and video interrupts
 }
 
+/*
 uint64_t get_machine_time(){
     return (((uint64_t)MTIME_HIGH)<<32) | MTIME_LOW;
+}*/
+
+uint32_t get_machine_time(){
+    return MTIME_LOW;
 }
 
 uint32_t get_controller_status() {

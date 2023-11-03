@@ -13,4 +13,12 @@ _start:
     nop
     jal zero, main
     .cfi_endproc
+
+
+.global SystemCall, SystemCall2
+SystemCall:
+SystemCall2:
+    ecall
+    ret
+
     .end

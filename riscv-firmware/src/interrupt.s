@@ -1,7 +1,29 @@
 .section .text, "ax"
-.global _interrupt_handler
+.global _c_syscall_handler
+_c_syscall_handler:
+    csrw    mscratch,ra
+    csrr    ra,mcause
+    addi    ra,ra,-11
+    bnez    ra,_interrupt_handler
+    csrr    ra,mscratch
+    csrw    mepc,ra
+    csrw    mscratch,gp
+    .option push
+    .option norelax
+    la      gp, __global_pointer$
+    .option pop
+    jal     c_syscall
+    csrr    gp,mscratch
+    csrr    ra,mepc
+    mret
 _interrupt_handler:
-    addi	sp,sp,-40
+    csrr    ra,mscratch
+    addi	sp,sp,-44
+    sw      gp,40(sp)
+    .option push
+    .option norelax
+    la      gp, __global_pointer$
+    .option pop
     sw	    ra,36(sp)
     sw	    t0,32(sp)
     sw	    t1,28(sp)
@@ -13,6 +35,7 @@ _interrupt_handler:
     sw	    a4,4(sp)
     sw	    a5,0(sp)
     call    c_interrupt_handler
+    lw	    gp,40(sp)
     lw	    ra,36(sp)
     lw	    t0,32(sp)
     lw	    t1,28(sp)
@@ -23,5 +46,5 @@ _interrupt_handler:
     lw	    a3,8(sp)
     lw	    a4,4(sp)
     lw	    a5,0(sp)
-    addi    sp,sp,40
+    addi    sp,sp,44
     mret
