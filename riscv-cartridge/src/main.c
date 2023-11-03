@@ -12,6 +12,9 @@
 #define TOTAL_SPRITE_SIZE (SPRITE_DATA_SIZE + CONTROL_SIZE) // Total size of sprite and control data
 #define PALETTE_SIZE 256
 
+uint32_t SystemCall(uint32_t* param);
+uint32_t SystemCall2(uint32_t* param1, char* param2);
+
 enum SysCallOperation
 {
   GET_TIMER_TICKS = 1,
@@ -158,18 +161,18 @@ int main()
               graphics_x_pos++;
             }
           }
-          // FIXME: spite_data is never updated!!
-          uint32_t SMALL_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE,
-                                              sprite_idx,
-                                              sprite_data,
-                                              sprite_ctrl_idx,
-                                              sprite_data_idx,
-                                              graphics_x_pos,
-                                              graphics_y_pos,
-                                              graphics_z_pos,
-                                              palette_idx,
-                                              palette_data};
-          SystemCall(SMALL_SPRITES_PARAMS2);
+
+          uint32_t SMALL_UPDATED_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE,
+                                                      sprite_idx,
+                                                      sprite_data,
+                                                      sprite_ctrl_idx,
+                                                      sprite_data_idx,
+                                                      graphics_x_pos,
+                                                      graphics_y_pos,
+                                                      graphics_z_pos,
+                                                      palette_idx,
+                                                      palette_data};
+          SystemCall(SMALL_UPDATED_SPRITES_PARAMS2);
         }
         last_global = global;
       }
