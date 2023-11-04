@@ -76,13 +76,13 @@ __attribute__((always_inline)) inline void csr_disable_interrupts(void){
 volatile uint32_t *BACKGROUND_DATA= (volatile uint32_t *)(0x50000000); 
 
 // mem map for large sprite data 0x40000 (256KiB)
-volatile uint32_t *LARGE_SPRITE_DATA= (volatile uint32_t *)(0x50090000); 
+volatile uint8_t *LARGE_SPRITE_DATA= (volatile uint8_t *)(0x50090000); 
 
 // mem map for memdium sprite data 0x10000 (64KiB)
-volatile uint32_t *MEDIUM_SPRITE_DATA= (volatile uint32_t *)(0x500D0000); 
+volatile uint8_t *MEDIUM_SPRITE_DATA= (volatile uint8_t *)(0x500D0000); 
 
 // mem map for small sprite data 0x10000 (64KiB)
-volatile uint32_t *SMALL_SPRITE_DATA= (volatile uint32_t *)(0x500E0000); 
+volatile uint8_t *SMALL_SPRITE_DATA= (volatile uint8_t *)(0x500E0000); 
 
 // mem map for background  0x1000 (4KiB)
 volatile uint32_t *BACKGROUND_PALETTE= (volatile uint32_t *)(0x500F0000); 
@@ -181,13 +181,13 @@ uint32_t get_controller_status() {
 }
 
 // controls for background
-void set_pixel_background_data(uint8_t image_idx, char* data) {
-    char* dst = ((char*)BACKGROUND_DATA)+image_idx*0x24000;
-    memcpy(dst, data, 0x24000);
-}
+//void set_pixel_background_data(uint8_t image_idx, char* data) {
+//    char* dst = ((char*)BACKGROUND_DATA)+image_idx*0x24000;
+//    memcpy(dst, data, 0x24000);
+//}
 
 // TODO: impl setting background data for tiles
-
+/*
 void set_pixel_background_control(
     uint8_t control_idx,
     uint8_t px_idx,
@@ -196,11 +196,11 @@ void set_pixel_background_control(
     uint8_t z, 
     uint8_t palette_idx
 ){
-    /* TODO: Shall we add the (1 << 31) here, to? */
     BACKGROUND_CONTROL[control_idx] = (px_idx << 29) | (z << 22) | (y << 12) | (x << 2) | palette_idx;
 }
-
+*/
 /* changed name to be set_tile_background_control from set_text_background_control*/
+/*
 void set_tile_background_control(
     uint8_t control_idx,
     uint8_t tile_idx,
@@ -284,10 +284,11 @@ void set_large_sprite_palette(uint8_t palette_idx, uint32_t* data) {
     memcpy(dst, data, 0x400);
 }
 
-
+*/
 /* ADDED new functions below */
 /* the type of control_ind is int or unit8_t */
 /* FIXME: should be either pixel or tile mode*/
+/*
 void setBackground(uint8_t image_idx, char* bg_pixel_data, uint8_t control_idx, uint8_t px_idx, uint8_t tile_idx, uint8_t sub_idx, uint16_t x, uint16_t y, uint8_t z,  uint8_t palette_idx, uint32_t* palette_data) {
     set_pixel_background_data(image_idx, bg_pixel_data);
     set_pixel_background_control(control_idx, px_idx, x, y, z, palette_idx);
@@ -312,6 +313,7 @@ void setSmallSprite(uint8_t sprite_idx, uint8_t* data, uint8_t sprite_ctrl_idx, 
     set_small_sprite_data(sprite_idx, data);
     set_small_sprite_palette(palette_idx, palette_data);
 }
+*/
 
 void switch_mode(uint32_t mode){
     MODE_CONTROL = (mode == 0) ? TEXT_MODE : GRAPHICS_MODE;
@@ -326,6 +328,20 @@ void simple_display_text(char *new_text, uint32_t start_idx){
     }
 }
 
+
+void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
+    MODE_CONTROL = GRAPHICS_MODE;
+    for (int y=0; y<32; y++){
+        for (int x = 0; x<32; x++){
+            MEDIUM_SPRITE_DATA[y*32+x] = 1;
+        }
+    }
+    MEDIUM_SPRITE_PALETTE[1] = 0xFFFF0000;
+    uint32_t index = 0;
+    uint8_t palette = 0;
+    MEDIUM_SPRITE_CONTROL[0] = (((uint32_t)index)<<24) | (((uint32_t)z)<<21) | (((uint32_t)y+32)<<12) | (((uint32_t)x+32)<<2) | (palette & 0x3);
+
+}
 
 /* -------- Syscall -------- */
 
@@ -371,33 +387,34 @@ uint32_t c_syscall(uint32_t* param, char* params) {
                 return -1;  // Or an appropriate error code
             }
 
-        case SET_BACKGROUND:
-           setBackground((uint8_t) param[1], (char*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint8_t) param[5], (uint8_t) param[6], (uint16_t) param[7], (uint16_t) param[8], (uint8_t) param[9], (uint8_t) param[10],(uint32_t*) param[11]);
-            return 0;
+        //case SET_BACKGROUND:
+        //   setBackground((uint8_t) param[1], (char*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint8_t) param[5], (uint8_t) param[6], (uint16_t) param[7], (uint16_t) param[8], (uint8_t) param[9], (uint8_t) param[10],(uint32_t*) param[11]);
+        //    return 0;
             
         case DISPLAY_TEXT:
             if (params != NULL) {
                 simple_display_text((char*) params, (uint32_t) param[1]);
                 return 0;  // Success
             } else {
-                // Handle invalid params pointer
+                //Handle invalid params pointer
                 return -1;  // Or an appropriate error code
             }
 
         case SET_SMALL_SPRITE:
+            simple_medium_sprite((int16_t) param[1], (int16_t) param[2], (int16_t) param[3]);
             // Validate parameters and call setSmallSprite
-            setSmallSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
+            //setSmallSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
             return 0;  // Success
 
-        case SET_MEDIUM_SPRITE:
+        //case SET_MEDIUM_SPRITE:
             // Validate parameters and call setLargeSprite
-            setMediumSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
-            return 0;  // Success
+        //    setMediumSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
+        //    return 0;  // Success
 
-        case SET_LARGE_SPRITE:
+        //case SET_LARGE_SPRITE:
             // Validate parameters and call setLargeSprite
-            setLagreSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
-            return 0;  // Success
+        //    setLagreSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
+        //    return 0;  // Success
 
         default:
             // Handle unknown operation
