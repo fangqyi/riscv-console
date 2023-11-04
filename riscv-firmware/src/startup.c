@@ -330,18 +330,33 @@ void simple_display_text(char *new_text, uint32_t start_idx){
 }
 
 
-void simple_medium_sprite(int16_t r, int16_t g, int16_t b){
-    int x = 1;
-    int y = 1;
+void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
     MODE_CONTROL = GRAPHICS_MODE;
     for (int j=0; j<32; j++){
         for (int i = 0; i<32; i++){
             MEDIUM_SPRITE_DATA[j*32+i] = 1;
         }
     }
-    MEDIUM_SPRITE_PALETTE[1] = (0<<24|r<<16|g<<8|b);//0xFFFF0000;
+    //uint32_t red =  0xFFFF0000;
+    //uint32_t blue = 0xFF0000FF;
+    //uint32_t green = 0xFF00FF00;
+    //uint32_t white = 0xFFFFFFFF;
+    //if (r == 1){
+    //    MEDIUM_SPRITE_PALETTE[1] = red;    
+    //}
+    //else if (r==2){
+    //    MEDIUM_SPRITE_PALETTE[1] = blue;  
+    //}
+    //else if (r==3){
+    //    MEDIUM_SPRITE_PALETTE[1] = green;  
+    //}
+    //else if (r==4){
+    //    MEDIUM_SPRITE_PALETTE[1] = white;  
+    //}
     uint32_t index = 0;
     uint8_t palette = 0;
+    MEDIUM_SPRITE_PALETTE[0] = 0xFFFF0000;  
+    MEDIUM_SPRITE_PALETTE[1] = 0xFFFF0000;  
     MEDIUM_SPRITE_CONTROL[0] = (((uint32_t)index)<<24) | (((uint32_t)z)<<21) | (((uint32_t)y+32)<<12) | (((uint32_t)x+32)<<2) | (palette & 0x3);
 
 }

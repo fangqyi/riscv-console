@@ -108,7 +108,6 @@ int main()
   {
     if (global != last_global){
       if (controller_status){
-        // uint64_t SMALL_SPRITES_test_PARAMS2[] = {SET_SMALL_SPRITE, 2, 2, 0};
         // SystemCall(SMALL_SPRITES_test_PARAMS2);
         current_mode = SystemCall(MODE_PARAMS);
         if (current_mode != GRAPHICS_MODE)
@@ -117,24 +116,32 @@ int main()
         }
         if (controller_status & 0x1)
         { // 'd' -> LEFT
-          r = 55; g = 0; b = 0; 
+         uint64_t SMALL_SPRITES_test_PARAMS2[] = {SET_SMALL_SPRITE, 0, 0, 0};
+         SystemCall(SMALL_SPRITES_test_PARAMS2);   
+          //r = 1; g = 0; b = 0; 
         }
         if (controller_status & 0x2)
         { // 'w' -> UP
-          r = 25; g = 25; b = 0; 
+         uint64_t SMALL_SPRITES_test_PARAMS2[] = {SET_SMALL_SPRITE, 10, 10, 0};
+        SystemCall(SMALL_SPRITES_test_PARAMS2); 
+         // r = 2; g = 225; b = 100; 
         }
         if (controller_status & 0x4)
         { // 'x' -> DOWN
-          r = 0; g = 10; b = 15; 
+         uint64_t SMALL_SPRITES_test_PARAMS2[] = {SET_SMALL_SPRITE, 5, 5, 0};
+         SystemCall(SMALL_SPRITES_test_PARAMS2); 
+          //r = 3; g = 250; b = 25; 
         }
         if (controller_status & 0x8)
         { // 'a' -> RIGHT
-          r = 30; g = 5; b = 5; 
+          //r = 4; g = 20; b = 250; 
+           uint64_t SMALL_SPRITES_test_PARAMS2[] = {SET_SMALL_SPRITE, 15, 15, 0};
+          SystemCall(SMALL_SPRITES_test_PARAMS2); 
           //display_video_clock_period();
         }
         //uint64_t SMALL_UPDATED_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE, (x_pos & 0x3F) << 3, (x_pos >> 6) << 3, 0};
-        uint64_t SMALL_UPDATED_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE,r, g, b};
-        SystemCall(SMALL_UPDATED_SPRITES_PARAMS2);   
+        //uint64_t SMALL_UPDATED_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE,r, g, b};
+        //SystemCall(SMALL_UPDATED_SPRITES_PARAMS2);   
       }
       last_global = global;
     }
