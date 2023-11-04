@@ -121,7 +121,7 @@ volatile uint32_t *SMALL_SPRITE_CONTROL = (volatile uint32_t *)(0x500F6300);
 volatile uint32_t *TEXT_PALETTE = (volatile uint32_t *)(0x500F6700); 
 
 /*--------------------------------------------------------------------------------------------*/     
-
+void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
 void init(void){
     uint8_t *Source = _erodata;
     uint8_t *Base = _data < _sdata ? _data : _sdata;
@@ -144,6 +144,7 @@ void init(void){
     csr_enable_interrupts();    // Global interrupt enable
     MTIMECMP_LOW = 1;
     MTIMECMP_HIGH = 0;
+    //simple_medium_sprite(0,0,0);
 }
 
 extern volatile int global;

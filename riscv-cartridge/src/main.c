@@ -14,8 +14,8 @@
 #define TOTAL_SPRITE_SIZE (SPRITE_DATA_SIZE + CONTROL_SIZE) // Total size of sprite and control data
 #define PALETTE_SIZE 256
 
-uint32_t SystemCall(uint64_t* param);
-uint32_t SystemCall2(uint64_t* param1, char* param2);
+uint32_t SystemCall(uint64_t *param);
+uint32_t SystemCall2(uint64_t *param1, char *param2);
 void display_video_clock_period();
 
 enum SysCallOperation
@@ -47,7 +47,7 @@ uint32_t CalculatePremultipliedRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 volatile int global = 42;
 volatile uint32_t controller_status = 0;
 
-volatile int REFRESH_COUNT = 100000;
+volatile int REFRESH_COUNT = 10000;
 
 int main()
 {
@@ -103,9 +103,8 @@ int main()
                                       palette_idx,
                                       palette_data};*/
   uint64_t SMALL_SPRITES_PARAMS2[] = {
-    SET_SMALL_SPRITE,
-    0,0,0
-  };                                   
+      SET_SMALL_SPRITE,
+      0, 0, 0};
   SystemCall(SMALL_SPRITES_PARAMS2); // Draws a Small Sprite
 
   controller_status = SystemCall(CONTROLLER_PARAMS);
@@ -115,6 +114,8 @@ int main()
     {
       if (controller_status)
       {
+        uint64_t SMALL_SPRITES_test_PARAMS2[] = {SET_SMALL_SPRITE, 2, 2, 0};
+        SystemCall(SMALL_SPRITES_test_PARAMS2);
         current_mode = SystemCall(MODE_PARAMS);
         if (current_mode != GRAPHICS_MODE)
         {
@@ -122,23 +123,8 @@ int main()
         }
         if (current_mode == GRAPHICS_MODE)
         {
-          // uint32_t CLS_PARAMS[] = {DISPLAY_TEXT, init_text_pos};
-          // char clear_text[] = " ";
-          // SystemCall2(CLS_PARAMS, clear_text);
-
-          // Clear original sprite
-          /*uint64_t SMALL_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE,
-                                              sprite_idx,
-                                              clear_data,
-                                              sprite_ctrl_idx,
-                                              sprite_data_idx,
-                                              graphics_x_pos,
-                                              graphics_y_pos,
-                                              graphics_z_pos,
-                                              palette_idx,
-                                              palette_data};*/
-          //SystemCall(SMALL_SPRITES_PARAMS2);
-
+          uint64_t SMALL_SPRITES_testtest_PARAMS2[] = {SET_SMALL_SPRITE, 3, 3, 0};
+          SystemCall(SMALL_SPRITES_testtest_PARAMS2);
           if (controller_status & 0x1)
           { // 'd' -> LEFT
             if (graphics_x_pos > 0)
@@ -167,42 +153,21 @@ int main()
               graphics_x_pos++;
             }
           }
-          /*
-          uint64_t SMALL_UPDATED_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE,
-                                                      sprite_idx,
-                                                      sprite_data,
-                                                      sprite_ctrl_idx,
-                                                      sprite_data_idx,
-                                                      graphics_x_pos,
-                                                      graphics_y_pos,
-                                                      graphics_z_pos,
-                                                      palette_idx,
-                                                      palette_data};*/
-          uint64_t SMALL_UPDATED_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE,graphics_x_pos, graphics_y_pos,0}; 
+          uint64_t SMALL_UPDATED_SPRITES_PARAMS2[] = {SET_SMALL_SPRITE, graphics_x_pos, graphics_y_pos, 0};
           SystemCall(SMALL_UPDATED_SPRITES_PARAMS2);
         }
         last_global = global;
       }
-      countdown--;
-      if (!countdown)
-      {
-        global++;
-        controller_status = SystemCall(CONTROLLER_PARAMS);
-        countdown = REFRESH_COUNT;
+    }
+    countdown--;
+    if (!countdown)
+    {
+      global++;
+      controller_status = SystemCall(CONTROLLER_PARAMS);
+      countdown = REFRESH_COUNT;
 
-        // Display the video clock period
-        display_video_clock_period();
-
-        // Switch between text and graphics mode based on global value
-        // uint32_t syscall_params_switch[2];
-        // int32_t MODE_PARAMS[1];
-        // MODE_PARAMS[0] = GET_MODE_CONTROL_REGISTER; // GET_MODE_CONTROL_REGISTER syscall number
-        // syscall_params_switch[0] = SWITCH_MODE;     // SWITCH_MODE syscall number
-        // syscall_params_switch[1] = (global % 2) ? GRAPHICS_MODE : TEXT_MODE; // Alternate between graphics and text mode
-        // SystemCall(syscall_params_switch); // Switch mode
-        //  c_syscall(syscall_params, NULL); // Switch mode
-        // current_mode = SystemCall(MODE_PARAMS); // Get the mode status
-      }
+      // Display the video clock period
+      display_video_clock_period();
     }
   }
   return 0;
@@ -230,6 +195,6 @@ void display_video_clock_period()
   char periodStr[10]; //
   snprintf(periodStr, sizeof(periodStr), "%d ms", period);
 
-  TIME_DISPLAY_PARAMS[1] = 61;
+  TIME_DISPLAY_PARAMS[1] = 101;
   SystemCall2(TIME_DISPLAY_PARAMS, periodStr);
 }

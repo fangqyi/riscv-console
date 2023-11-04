@@ -8,9 +8,10 @@ volatile int global = 0;
 //cartridge setup
 volatile uint32_t *CartridgeStatus = (volatile uint32_t *)(0x4000001C);
 typedef void (*FunctionPtr)(void);
+void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
 
 int main(){
-    
+    simple_medium_sprite(0,0,0);
     //loading cartridge
     while (1){
         if(*CartridgeStatus & 0x1){
