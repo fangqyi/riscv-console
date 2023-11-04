@@ -50,6 +50,11 @@ void init(void){
     while(Base < End){
         *Base++ = 0;
     }
+
+    csr_write_mie(0x888);       // Enable all interrupt soruces
+    csr_enable_interrupts();    // Global interrupt enable
+    MTIMECMP_LOW = 1;
+    MTIMECMP_HIGH = 0;
 }
 
 extern volatile int global;
@@ -60,7 +65,7 @@ void c_interrupt_handler(void){
     NewCompare += 100;
     MTIMECMP_HIGH = NewCompare>>32;
     MTIMECMP_LOW = NewCompare;
-    global++;
-    controller_status = CONTROLLER;
+    //global++;
+    //controller_status = CONTROLLER;
 }
 
