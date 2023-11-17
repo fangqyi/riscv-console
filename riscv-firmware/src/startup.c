@@ -377,11 +377,19 @@ enum SysCallOperation {
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
+    /*
     if (param == NULL) {
         // Handle invalid input
         return -1;  // Or an appropriate error code
     }
-
+   */
+    if (param == NULL) {
+        // Handle invalid input
+        // error handler
+        report_error(ERROR_INVALID_PARAM);
+        return ERROR_INVALID_PARAM;
+        //return -1;  // Or an appropriate error code
+    }
     switch (param[0]) {
         case GET_TIMER_TICKS:
             return get_machine_time();
