@@ -443,6 +443,9 @@ uint32_t c_syscall(uint32_t* param, char* params) {
 
         default:
             // Handle unknown operation
-            return -1;  // Or an appropriate error code
+            // error handler
+            report_error(ERROR_UNSUPPORTED_OPERATION);
+            return ERROR_UNSUPPORTED_OPERATION;
+            // return -1;  // Or an appropriate error code
     }
 }
