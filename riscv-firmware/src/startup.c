@@ -181,10 +181,21 @@ uint32_t get_controller_status() {
     return controller_status;
 }
 
+uint32_t RED =  0xFFFF0000;
+uint32_t BLUE = 0xFF0000FF;
+uint32_t GREEN = 0xFF00FF00;
+uint32_t WHITE = 0xFFFFFFFF;
+
+void my_memcpy(uint8_t* dst, uint8_t* src, size_t num) {
+    for (size_t i = 0; i < num; i++) {
+        dst[i] = src[i];
+    }
+}
+
 // controls for background
 //void set_pixel_background_data(uint8_t image_idx, char* data) {
 //    char* dst = ((char*)BACKGROUND_DATA)+image_idx*0x24000;
-//    memcpy(dst, data, 0x24000);
+//    my_memcpy(dst, data, 0x24000);
 //}
 
 // TODO: impl setting background data for tiles
@@ -201,50 +212,50 @@ void set_pixel_background_control(
 }
 */
 /* changed name to be set_tile_background_control from set_text_background_control*/
-/*
-void set_tile_background_control(
-    uint8_t control_idx,
-    uint8_t tile_idx,
-    uint8_t sub_idx,
-    uint16_t x,
-    uint16_t y,
-    uint8_t z, 
-    uint8_t palette_idx
-){
-    BACKGROUND_CONTROL[control_idx] = (1 << 31) | (tile_idx << 28) | (sub_idx << 25) | (z << 22) | ((y+288) << 12) | ((x+512) << 2) | palette_idx;
-}
 
-void set_background_palette(uint8_t palette_idx, uint32_t* data) {
-    char* dst = ((char*)BACKGROUND_PALETTE)+palette_idx*0x400;
-    memcpy(dst, data, 0x400);
-}
+// void set_tile_background_control(
+//     uint8_t control_idx,
+//     uint8_t tile_idx,
+//     uint8_t sub_idx,
+//     uint16_t x,
+//     uint16_t y,
+//     uint8_t z, 
+//     uint8_t palette_idx
+// ){
+//     BACKGROUND_CONTROL[control_idx] = (1 << 31) | (tile_idx << 28) | (sub_idx << 25) | (z << 22) | ((y+288) << 12) | ((x+512) << 2) | palette_idx;
+// }
 
-// controls for small sprites
-void set_small_sprite_data(uint8_t sprite_idx, uint8_t* data){
-    char* dst = ((char*)SMALL_SPRITE_DATA)+sprite_idx*0x100;
-    memcpy(dst, data, 0x100);
-}
+// void set_background_palette(uint8_t palette_idx, uint32_t* data) {
+//     char* dst = ((char*)BACKGROUND_PALETTE)+palette_idx*0x400;
+//     my_memcpy(dst, data, 0x400);
+// }
 
-void set_small_sprite_control(
-    uint8_t sprite_ctrl_idx,
-    uint8_t sprite_data_idx,
-    uint16_t x,
-    uint16_t y,
-    uint16_t z,
-    uint8_t palette_idx
-){
-    SMALL_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | ((y+16) << 12) | ((x+16) << 2) | palette_idx;
-}
+// // controls for small sprites
+// void set_small_sprite_data(uint8_t sprite_idx, uint8_t* data){
+//     char* dst = ((char*)SMALL_SPRITE_DATA)+sprite_idx*0x100;
+//     my_memcpy(dst, data, 0x100);
+// }
 
-void set_small_sprite_palette(uint8_t palette_idx, uint32_t* data) {
-    char* dst = ((char*)SMALL_SPRITE_PALETTE)+palette_idx*0x400;
-    memcpy(dst, data, 0x400);
-}
+// void set_small_sprite_control(
+//     uint8_t sprite_ctrl_idx,
+//     uint8_t sprite_data_idx,
+//     uint16_t x,
+//     uint16_t y,
+//     uint16_t z,
+//     uint8_t palette_idx
+// ){
+//     SMALL_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | ((y+16) << 12) | ((x+16) << 2) | palette_idx;
+// }
+
+// void set_small_sprite_palette(uint8_t palette_idx, uint32_t* data) {
+//     char* dst = ((char*)SMALL_SPRITE_PALETTE)+palette_idx*0x400;
+//     my_memcpy(dst, data, 0x400);
+// }
 
 // controls for medium sprites
 void set_medium_sprite_data(uint8_t sprite_idx, uint8_t* data){
     char* dst = ((char*)MEDIUM_SPRITE_DATA)+sprite_idx*0x400;
-    memcpy(dst, data, 0x400);
+    my_memcpy(dst, data, 0x400);
 }
 
 void set_medium_sprite_control(
@@ -260,32 +271,32 @@ void set_medium_sprite_control(
 
 void set_medium_sprite_palette(uint8_t palette_idx, uint32_t* data) {
     char* dst = ((char*)MEDIUM_SPRITE_PALETTE)+palette_idx*0x400;
-    memcpy(dst, data, 0x400);
+    my_memcpy(dst, data, 0x400);
 }
 
-// controls for large sprites
-void set_large_sprite_data(uint8_t sprite_idx, uint8_t* data){
-    char* dst = ((char*)LARGE_SPRITE_DATA)+sprite_idx*0x1000;
-    memcpy(dst, data, 0x1000);
-}
+// // controls for large sprites
+// void set_large_sprite_data(uint8_t sprite_idx, uint8_t* data){
+//     char* dst = ((char*)LARGE_SPRITE_DATA)+sprite_idx*0x1000;
+//     my_memcpy(dst, data, 0x1000);
+// }
 
-void set_large_sprite_control(
-    uint8_t sprite_ctrl_idx,
-    uint8_t sprite_data_idx,
-    uint16_t x,
-    uint16_t y,
-    uint16_t z,
-    uint8_t palette_idx
-){
-    LARGE_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | ((y+64) << 12) | ((x+64) << 2) | palette_idx;
-}
+// void set_large_sprite_control(
+//     uint8_t sprite_ctrl_idx,
+//     uint8_t sprite_data_idx,
+//     uint16_t x,
+//     uint16_t y,
+//     uint16_t z,
+//     uint8_t palette_idx
+// ){
+//     LARGE_SPRITE_CONTROL[sprite_ctrl_idx] = (sprite_data_idx << 24) | (z << 21) | ((y+64) << 12) | ((x+64) << 2) | palette_idx;
+// }
 
-void set_large_sprite_palette(uint8_t palette_idx, uint32_t* data) {
-    char* dst = ((char*)LARGE_SPRITE_PALETTE)+palette_idx*0x400;
-    memcpy(dst, data, 0x400);
-}
+// void set_large_sprite_palette(uint8_t palette_idx, uint32_t* data) {
+//     char* dst = ((char*)LARGE_SPRITE_PALETTE)+palette_idx*0x400;
+//     my_memcpy(dst, data, 0x400);
+// }
 
-*/
+
 /* ADDED new functions below */
 /* the type of control_ind is int or unit8_t */
 /* FIXME: should be either pixel or tile mode*/
@@ -297,7 +308,7 @@ void setBackground(uint8_t image_idx, char* bg_pixel_data, uint8_t control_idx, 
     set_background_palette(palette_idx, palette_data);
 }
 
-void setLagreSprite(uint8_t sprite_idx, uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
+void setLargeSprite(uint8_t sprite_idx, uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
     set_large_sprite_control(sprite_ctrl_idx, sprite_data_idx, x, y, z, palette_idx);
     set_large_sprite_data(sprite_idx, data);
     set_large_sprite_palette(palette_idx, palette_data);
@@ -332,33 +343,21 @@ void simple_display_text(char *new_text, uint32_t start_idx){
 
 void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
     MODE_CONTROL = GRAPHICS_MODE;
-    for (int j=0; j<32; j++){
-        for (int i = 0; i<32; i++){
-            MEDIUM_SPRITE_DATA[j*32+i] = 1;
+
+    uint8_t sprite_data[0x400];
+    uint32_t palette_data[0x100];
+    for (int i = 0; i < 0x20; i++){
+        for (int j = 0; j < 0x20; j++) {
+            palette_data[(i*0x20 + j)%0x100] = 0;
+            sprite_data[i*0x20 + j] = i < 0x10 ? 0 : 1;
         }
     }
-    //uint32_t red =  0xFFFF0000;
-    //uint32_t blue = 0xFF0000FF;
-    //uint32_t green = 0xFF00FF00;
-    //uint32_t white = 0xFFFFFFFF;
-    //if (r == 1){
-    //    MEDIUM_SPRITE_PALETTE[1] = red;    
-    //}
-    //else if (r==2){
-    //    MEDIUM_SPRITE_PALETTE[1] = blue;  
-    //}
-    //else if (r==3){
-    //    MEDIUM_SPRITE_PALETTE[1] = green;  
-    //}
-    //else if (r==4){
-    //    MEDIUM_SPRITE_PALETTE[1] = white;  
-    //}
-    uint32_t index = 0;
-    uint8_t palette = 0;
-    MEDIUM_SPRITE_PALETTE[0] = 0xFFFF0000;  
-    MEDIUM_SPRITE_PALETTE[1] = 0xFFFF0000;  
-    MEDIUM_SPRITE_CONTROL[0] = (((uint32_t)index)<<24) | (((uint32_t)z)<<21) | (((uint32_t)y+32)<<12) | (((uint32_t)x+32)<<2) | (palette & 0x3);
-
+    palette_data[0] = GREEN;
+    palette_data[1] = RED;
+    
+    set_medium_sprite_palette(2, palette_data);
+    set_medium_sprite_data(10, sprite_data);
+    set_medium_sprite_control(5, 10, x, y, z, 2);
 }
 
 /* -------- Syscall -------- */
