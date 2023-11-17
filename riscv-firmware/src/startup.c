@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <error.h>
 
 extern uint8_t _erodata[];
 extern uint8_t _data[];
@@ -377,11 +378,19 @@ enum SysCallOperation {
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
+    /*
     if (param == NULL) {
         // Handle invalid input
         return -1;  // Or an appropriate error code
     }
-
+   */
+    if (param == NULL) {
+        // Handle invalid input
+        // error handler
+        report_error(ERROR_INVALID_PARAM);
+        return ERROR_INVALID_PARAM;
+        //return -1;  // Or an appropriate error code
+    }
     switch (param[0]) {
         case GET_TIMER_TICKS:
             return get_machine_time();
@@ -434,6 +443,9 @@ uint32_t c_syscall(uint32_t* param, char* params) {
 
         default:
             // Handle unknown operation
-            return -1;  // Or an appropriate error code
+            // error handler
+            report_error(ERROR_UNSUPPORTED_OPERATION);
+            return ERROR_UNSUPPORTED_OPERATION;
+            // return -1;  // Or an appropriate error code
     }
 }
