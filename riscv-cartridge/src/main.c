@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+// Error handler
+#include "../../riscv-firmware/src/error.h"
 
 // Define TEXT_MODE and GRAPHICS_MODE
 #define TEXT_MODE 0x0
@@ -176,4 +178,33 @@ void display_video_clock_period()
   char periodStr[40]; //
   snprintf(periodStr, sizeof(periodStr), "Video Clock Period: %d ms", period);
   SystemCall2(TIME_DISPLAY_PARAMS, periodStr);
+}
+
+// Error handler
+
+void report_error(uint32_t error_code) {
+  char errorMsg[100];
+
+  // Error handling based on the error code
+  switch (error_code) {
+    case ERROR_INVALID_PARAM:
+      snprintf(errorMsg, sizeof(errorMsg), "Error %u: Invalid parameter provided.\n", error_code);
+      break;
+    case ERROR_UNSUPPORTED_OPERATION:
+      snprintf(errorMsg, sizeof(errorMsg), "Error %u: Unsupported operation.\n", error_code);
+      break;
+
+      // Other error cases
+    default:
+      snprintf(errorMsg, sizeof(errorMsg), "Error %u: Unknown error.\n", error_code);
+      break;
+  }
+
+  // Display the error message using a system call
+  uint64_t error_display_params[] = {DISPLAY_TEXT, 160};
+  // SystemCall2(error_display_params, errorMsg); // Assembly code for error handler
+
+  // Attempt handle error
+  // Restart the system
+
 }
