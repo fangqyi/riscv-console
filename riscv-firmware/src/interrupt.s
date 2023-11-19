@@ -1,5 +1,5 @@
 .section .text, "ax"
-.global _interrupt_handler
+.global _interrupt_handler, InitThread, SwitchThread
 _interrupt_handler:
     csrw    mscratch,ra
     csrr    ra,mcause
@@ -48,6 +48,7 @@ c_syscall_handle:
     lw	    a5,0(sp)
     addi    sp,sp,44
     mret
+
 InitThread:
     addi    a0,a0,-52
     sw	    a1,48(a0)
