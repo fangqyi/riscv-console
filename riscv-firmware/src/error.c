@@ -42,7 +42,7 @@ void report_error(uint32_t error_code) {
 
   // Display the error message using a system call
   uint64_t error_display_params[] = {DISPLAY_TEXT, 160};
-  SystemCall2(error_display_params, errorMsg);
+  // SystemCall2(error_display_params, errorMsg); // Assembly code for error handler
 
   // Attempt handle error
   // Restart the system
