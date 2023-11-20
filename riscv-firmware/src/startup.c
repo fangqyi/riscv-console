@@ -387,7 +387,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
     if (param == NULL) {
         // Handle invalid input
         // error handler
-        report_error(ERROR_INVALID_PARAM);
+        // report_error(ERROR_INVALID_PARAM); //Undefined reference
         return ERROR_INVALID_PARAM;
         //return -1;  // Or an appropriate error code
     }
@@ -444,7 +444,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
         default:
             // Handle unknown operation
             // error handler
-            report_error(ERROR_UNSUPPORTED_OPERATION);
+            // report_error(ERROR_UNSUPPORTED_OPERATION); // Undefined reference
             return ERROR_UNSUPPORTED_OPERATION;
             // return -1;  // Or an appropriate error code
     }
