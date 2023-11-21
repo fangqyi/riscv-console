@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <string.h>
-#include "error.h"
+//#include "error.h"
 
 extern uint8_t _erodata[];
 extern uint8_t _data[];
@@ -121,6 +121,11 @@ volatile uint32_t *SMALL_SPRITE_CONTROL = (volatile uint32_t *)(0x500F6300);
 // mem map for small sprite palette 0x80 (128B)
 volatile uint32_t *TEXT_PALETTE = (volatile uint32_t *)(0x500F6700); 
 
+extern volatile int global;
+extern volatile uint32_t controller_status;
+volatile uint32_t cmd_status;
+volatile uint32_t interrupt_pending_reg;
+
 /*--------------------------------------------------------------------------------------------*/     
 void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
 void init(void){
@@ -137,20 +142,16 @@ void init(void){
         *Base++ = 0;
     }
 
-    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x1; // enable cartidge interrupts
-    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x2; // enable video interrupts
-    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x4; // enable command interrupts
+    //INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x1; // enable cartidge interrupts
+    //INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x2; // enable video interrupts
+    //INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x4; // enable command interrupts
 
     csr_write_mie(0x888);       // Enable all interrupt sources ^ is the above still necessary
     csr_enable_interrupts();    // Global interrupt enable
     MTIMECMP_LOW = 1;
     MTIMECMP_HIGH = 0;
-    //simple_medium_sprite(0,0,0);
+    cmd_status = 0;
 }
-
-extern volatile int global;
-extern volatile uint32_t controller_status;
-volatile uint32_t interrupt_pending_reg;
 
 void c_interrupt_handler(void){
     uint64_t new_compare = (((uint64_t)MTIMECMP_HIGH)<<32) | MTIMECMP_LOW;
@@ -160,13 +161,32 @@ void c_interrupt_handler(void){
     global++;
     controller_status = CONTROLLER;
     interrupt_pending_reg = INTERRUPT_PENDING;
-    INTERRUPT_PENDING = INTERRUPT_PENDING & 0x4; // clear command interrupts
-    INTERRUPT_PENDING = INTERRUPT_PENDING & 0x2; // clear video interrupts
-    // INTERRUPT_PENDING = INTERRUPT_PENDING & 0x1; // clear cartidge interrupts
+    if ((INTERRUPT_PENDING & 0x4) == 0)
+    {
+        cmd_status = 1;
+    }
+    INTERRUPT_PENDING = INTERRUPT_PENDING | 0x4; // clear command interrupts
+    INTERRUPT_PENDING = INTERRUPT_PENDING | 0x2; // clear video interrupts
+    INTERRUPT_PENDING = INTERRUPT_PENDING | 0x1; // clear cartidge interrupts
 }
 
 uint32_t get_interrupt_pending_reg(){
-    return interrupt_pending_reg;  // TODO: separate for command and video interrupts
+    return interrupt_pending_reg;  
+}
+
+uint32_t get_cmd_status(){
+    uint32_t ret = cmd_status;
+    cmd_status = 0; // clear cmd_status
+    return ret;
+    }
+
+uint32_t get_vid_pending_bit(){
+    return (get_interrupt_pending_reg() & 0x1) ;  
+}
+
+// key_idx: 0 LEFT, 1 UP, 2 DOWN, 3 RIGHT
+uint32_t get_controller_status_key(uint8_t key_idx){
+    return controller_status & (1 << key_idx);
 }
 
 /*
@@ -361,6 +381,45 @@ void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
     set_medium_sprite_control(5, 10, x, y, z, 2);
 }
 
+void simple_medium_sprite_2(int16_t x, int16_t y, int16_t z){
+    MODE_CONTROL = GRAPHICS_MODE;
+
+    uint8_t sprite_data[0x400];
+    uint32_t palette_data[0x100];
+    for (int i = 0; i < 0x20; i++){
+        for (int j = 0; j < 0x20; j++) {
+            palette_data[(i*0x20 + j)%0x100] = 0;
+            sprite_data[i*0x20 + j] = i < 0x10 ? 0 : 1;
+        }
+    }
+    palette_data[0] = GREEN;
+    palette_data[1] = RED;
+    
+    set_medium_sprite_palette(2, palette_data);
+    set_medium_sprite_data(15, sprite_data);
+    set_medium_sprite_control(7, 15, x, y, z, 2);
+}
+
+void simple_medium_sprite_test_interrupt_reg(int16_t x, int16_t y, int16_t z){
+    MODE_CONTROL = GRAPHICS_MODE;
+
+    uint8_t sprite_data[0x400];
+    uint32_t palette_data[0x100];
+    for (int i = 0; i < 0x20; i++){
+        for (int j = 0; j < 0x20; j++) {
+            palette_data[(i*0x20 + j)%0x100] = 0;
+            sprite_data[i*0x20 + j] = get_cmd_status() ? 0 : 1; //CONTROLLER & 0x1 ? 0 : 1;
+        }
+    }
+    palette_data[0] = GREEN;
+    palette_data[1] = RED;
+    
+    set_medium_sprite_palette(2, palette_data);
+    set_medium_sprite_data(10, sprite_data);
+    set_medium_sprite_control(5, 10, x, y, z, 2);
+
+}
+
 /* -------- Syscall -------- */
 
 // Define constants for system call operations
@@ -375,6 +434,9 @@ enum SysCallOperation {
     SET_SMALL_SPRITE = 8,
     SET_MEDIUM_SPRITE = 9,
     SET_LARGE_SPRITE = 10,
+    GET_CMD_STATUS = 14,
+    GET_VID_PENDING = 15,
+    GET_CONTROLLER_KEY_STATUS = 16
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
@@ -387,9 +449,9 @@ uint32_t c_syscall(uint32_t* param, char* params) {
     if (param == NULL) {
         // Handle invalid input
         // error handler
-        report_error(ERROR_INVALID_PARAM);
-        return ERROR_INVALID_PARAM;
-        //return -1;  // Or an appropriate error code
+       // report_error(ERROR_INVALID_PARAM);
+        //return ERROR_INVALID_PARAM;
+        return -1;  // Or an appropriate error code
     }
     switch (param[0]) {
         case GET_TIMER_TICKS:
@@ -399,7 +461,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
             return MODE_CONTROL;
 
         case GET_CONTROLLER_REGISTER:
-            return CONTROLLER;
+            return get_controller_status();
 
         case GET_INTERRUPT_PENDING_REGISTER:
             return interrupt_pending_reg;
@@ -441,11 +503,24 @@ uint32_t c_syscall(uint32_t* param, char* params) {
            setLargeSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
            return 0;  // Success
 
+        case  GET_CMD_STATUS:
+            return get_cmd_status();
+        
+        case GET_VID_PENDING:
+            return get_vid_pending_bit();
+        
+        case GET_CONTROLLER_KEY_STATUS:
+            uint8_t key_idx = (uint8_t) param[1];
+            if (0 <= key_idx) & (key_idx <= 3):
+                return get_controller_status_key(key_idx);
+            else:
+                return -1;  //invalid key index error
+
         default:
             // Handle unknown operation
             // error handler
-            report_error(ERROR_UNSUPPORTED_OPERATION);
-            return ERROR_UNSUPPORTED_OPERATION;
-            // return -1;  // Or an appropriate error code
+            //report_error(ERROR_UNSUPPORTED_OPERATION);
+            //return ERROR_UNSUPPORTED_OPERATION;
+            return -1;  // Or an appropriate error code
     }
 }

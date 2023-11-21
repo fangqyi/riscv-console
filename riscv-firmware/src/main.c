@@ -37,9 +37,9 @@ void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
 int main(){
     uint32_t OtherThreadStack[128];
 
-    simple_medium_sprite(0,0,0);
     //loading cartridge
     while (1){
+        simple_medium_sprite_test_key(0,0,0);
         if(*CartridgeStatus & 0x1){
             FunctionPtr Fun = (FunctionPtr)((*CartridgeStatus) & 0xFFFFFFFC);
             Fun();
@@ -84,8 +84,9 @@ void OtherThreadFunction(void *){
 
 
 
-/* ---------- normal functions ---------- */
 
+/* ---------- normal functions ---------- */
+/*
 pid_t fork(void) {
     pid_t child_pid = -1;
     child_pid = fork();
@@ -146,3 +147,4 @@ pid_t wait(int* status) {
     
     return terminated_child_pid;
 }
+*/
