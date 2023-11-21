@@ -410,12 +410,9 @@ enum SysCallOperation {
     SET_SMALL_SPRITE = 8,
     SET_MEDIUM_SPRITE = 9,
     SET_LARGE_SPRITE = 10,
-<<<<<<< HEAD
+    ERROR_HANDLER_OPERATION = 11, // Add ERROR_HANDLER_OPERATION
     INIT_THREAD = 12,
     SWITCH_THREAD = 13,
-=======
-    ERROR_HANDLER_OPERATION = 11, // Add ERROR_HANDLER_OPERATION
->>>>>>> 79d18d9b2cfc4e9ad782b3d2cb310bab30767242
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
