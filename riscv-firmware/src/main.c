@@ -9,26 +9,10 @@
 #include <sys/wait.h>
 
 volatile uint32_t controller_status = 0;
-volatile int global = 0;
+volatile int global = 42;
 
-
-// added part.
-typedef void (*TThreadEntry)(void *);
-typedef uint32_t *TThreadContext;
-
-void OtherThreadFunction(void *);
-
-// this can be thought as fork() function
-TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param);
-
-// 
-void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext);
-
-TThreadContext OtherThread;
-TThreadContext MainThread;
-
-int pthread_mutex_lock(pthread_mutex_t *mutex);
-int pthread_mutex_unlock(pthread_mutex_t *mutex);
+// int pthread_mutex_lock(pthread_mutex_t *mutex);
+// int pthread_mutex_unlock(pthread_mutex_t *mutex);
 // to here
 
 
@@ -37,9 +21,8 @@ volatile uint32_t *CartridgeStatus = (volatile uint32_t *)(0x4000001C);
 typedef void (*FunctionPtr)(void);
 void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
 
-int main(){
-    uint32_t OtherThreadStack[128];
 
+int main(){
     simple_medium_sprite(0,0,0);
     //loading cartridge
     while (1){
@@ -75,77 +58,26 @@ char *_sbrk(int numbytes){
   }
 }
 
-void OtherThreadFunction(void *){
-    int last_global = global;
-    while(1){
-        if(global != last_global){
-            SwitchThread(&OtherThread,MainThread);
-            last_global = global;
-        }
-    }
-}
-
-
 
 /* ---------- normal functions ---------- */
 
-pid_t fork(void) {
-    pid_t child_pid = -1;
-    child_pid = fork();
-    
-    if (child_pid < 0) {
-        // Error occurred
-        if (errno == EAGAIN) {
-            // Error code -1 for exceeding the limit
-            return -1;
-        } else {
-            // Other error
-            return -2;
-        }
-    }
-    
-    return child_pid;
-}
+// pthread_mutex_t locks[100];  // Assuming you have 100 locks
 
-pthread_mutex_t locks[100];  // Assuming you have 100 locks
-
-void lock(int lockno) {
-    if (lockno < 0 || lockno >= 100) {
-        // Invalid lock number
-        return;
-    }
+// void lock(int lockno) {
+//     if (lockno < 0 || lockno >= 100) {
+//         // Invalid lock number
+//         return;
+//     }
     
-    pthread_mutex_lock(&locks[lockno]);
-}
+//     pthread_mutex_lock(&locks[lockno]);
+// }
 
 
-void unlock(int lockno) {
-    if (lockno < 0 || lockno >= 100) {
-        // Invalid lock number
-        return;
-    }
+// void unlock(int lockno) {
+//     if (lockno < 0 || lockno >= 100) {
+//         // Invalid lock number
+//         return;
+//     }
     
-    pthread_mutex_unlock(&locks[lockno]);
-}
-
-pid_t wait(int* status) {
-    pid_t terminated_child_pid;
-    int child_status;
-    
-    terminated_child_pid = wait(&child_status);
-    
-    if (terminated_child_pid < 0) {
-        // Error occurred
-        return -1;
-    }
-    
-    if (WIFEXITED(child_status)) {
-        // Child terminated normally
-        *status = WEXITSTATUS(child_status);
-    } else {
-        // Child didn't terminate normally
-        *status = -1;  // You may need to define error codes
-    }
-    
-    return terminated_child_pid;
-}
+//     pthread_mutex_unlock(&locks[lockno]);
+// }

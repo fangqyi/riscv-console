@@ -341,7 +341,6 @@ void simple_display_text(char *new_text, uint32_t start_idx){
     }
 }
 
-
 void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
     MODE_CONTROL = GRAPHICS_MODE;
 
@@ -361,6 +360,30 @@ void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
     set_medium_sprite_control(5, 10, x, y, z, 2);
 }
 
+typedef void (*TThreadEntry)(void *);
+typedef uint32_t *TThreadContext;
+
+void OtherThreadFunction(void *);
+
+// this can be thought as fork() function
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param);
+
+void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext);
+
+TThreadContext OtherThread;
+TThreadContext MainThread;
+
+void OtherThreadFunction(void *){
+    int last_global = global;
+    while(1){
+        if(global != last_global){
+            SwitchThread(&OtherThread,MainThread);
+            last_global = global;
+        }
+    }
+}
+
+
 /* -------- Syscall -------- */
 
 // Define constants for system call operations
@@ -375,6 +398,8 @@ enum SysCallOperation {
     SET_SMALL_SPRITE = 8,
     SET_MEDIUM_SPRITE = 9,
     SET_LARGE_SPRITE = 10,
+    INIT_THREAD = 11,
+    SWITCH_THREAD = 12,
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
@@ -440,6 +465,16 @@ uint32_t c_syscall(uint32_t* param, char* params) {
             // Validate parameters and call setLargeSprite
            setLargeSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
            return 0;  // Success
+
+        case INIT_THREAD:
+            // (uint32_t *stacktop, ThreadEntry entry, void *param
+            InitThread((uint32_t*) param[1], (TThreadEntry) param[2], (void*) param[3]);
+            return 0;
+            
+        case SWITCH_THREAD:
+            // ThreadContext *oldcontext, ThreadContext newcontext
+            SwitchThread((TThreadContext*) param[1], (TThreadContext) param[2]);
+            return 0;
 
         default:
             // Handle unknown operation
