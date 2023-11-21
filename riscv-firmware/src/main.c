@@ -23,7 +23,7 @@ void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
 
 
 int main(){
-    simple_medium_sprite(0,0,0);
+    //simple_medium_sprite(0,0,0);
     //loading cartridge
     while (1){
         if(*CartridgeStatus & 0x1){
@@ -59,7 +59,6 @@ char *_sbrk(int numbytes){
 }
 
 
-/* ---------- normal functions ---------- */
 
 // pthread_mutex_t locks[100];  // Assuming you have 100 locks
 

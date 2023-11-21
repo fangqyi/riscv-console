@@ -121,6 +121,11 @@ volatile uint32_t *SMALL_SPRITE_CONTROL = (volatile uint32_t *)(0x500F6300);
 // mem map for small sprite palette 0x80 (128B)
 volatile uint32_t *TEXT_PALETTE = (volatile uint32_t *)(0x500F6700); 
 
+extern volatile int global;
+extern volatile uint32_t controller_status;
+volatile uint32_t cmd_status;
+volatile uint32_t interrupt_pending_reg;
+
 /*--------------------------------------------------------------------------------------------*/     
 void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
 void init(void){
@@ -137,15 +142,15 @@ void init(void){
         *Base++ = 0;
     }
 
-    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x1; // enable cartidge interrupts
-    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x2; // enable video interrupts
-    INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x4; // enable command interrupts
+    //INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x1; // enable cartidge interrupts
+    //INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x2; // enable video interrupts
+    //INTERRUPT_ENABLE = INTERRUPT_ENABLE | 0x4; // enable command interrupts
 
     csr_write_mie(0x888);       // Enable all interrupt sources ^ is the above still necessary
     csr_enable_interrupts();    // Global interrupt enable
     MTIMECMP_LOW = 1;
     MTIMECMP_HIGH = 0;
-    //simple_medium_sprite(0,0,0);
+    cmd_status = 0;
 }
 
 extern volatile int global;
@@ -172,13 +177,32 @@ void c_interrupt_handler(void){
     global++;
     controller_status = CONTROLLER;
     interrupt_pending_reg = INTERRUPT_PENDING;
-    INTERRUPT_PENDING = INTERRUPT_PENDING & 0x4; // clear command interrupts
-    INTERRUPT_PENDING = INTERRUPT_PENDING & 0x2; // clear video interrupts
-    // INTERRUPT_PENDING = INTERRUPT_PENDING & 0x1; // clear cartidge interrupts
+    if ((INTERRUPT_PENDING & 0x4) == 0)
+    {
+        cmd_status = 1;
+    }
+    INTERRUPT_PENDING = INTERRUPT_PENDING | 0x4; // clear command interrupts
+    INTERRUPT_PENDING = INTERRUPT_PENDING | 0x2; // clear video interrupts
+    INTERRUPT_PENDING = INTERRUPT_PENDING | 0x1; // clear cartidge interrupts
 }
 
 uint32_t get_interrupt_pending_reg(){
-    return interrupt_pending_reg;  // TODO: separate for command and video interrupts
+    return interrupt_pending_reg;  
+}
+
+uint32_t get_cmd_status(){
+    uint32_t ret = cmd_status;
+    cmd_status = 0; // clear cmd_status
+    return ret;
+    }
+
+uint32_t get_vid_pending_bit(){
+    return (get_interrupt_pending_reg() & 0x1) ;  
+}
+
+// key_idx: 0 LEFT, 1 UP, 2 DOWN, 3 RIGHT
+uint32_t get_controller_status_key(uint8_t key_idx){
+    return controller_status & (1 << key_idx);
 }
 
 /*
@@ -395,7 +419,6 @@ void OtherThreadFunction(void *){
     }
 }
 
-
 /* -------- Syscall -------- */
 
 // Define constants for system call operations
@@ -413,6 +436,9 @@ enum SysCallOperation {
     ERROR_HANDLER_OPERATION = 11, // Add ERROR_HANDLER_OPERATION
     INIT_THREAD = 12,
     SWITCH_THREAD = 13,
+    GET_CMD_STATUS = 14,
+    GET_VID_PENDING = 15,
+    GET_CONTROLLER_KEY_STATUS = 16
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
@@ -432,7 +458,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
             return MODE_CONTROL;
 
         case GET_CONTROLLER_REGISTER:
-            return CONTROLLER;
+            return get_controller_status();
 
         case GET_INTERRUPT_PENDING_REGISTER:
             return interrupt_pending_reg;
@@ -488,10 +514,24 @@ uint32_t c_syscall(uint32_t* param, char* params) {
             SwitchThread((TThreadContext*) param[1], (TThreadContext) param[2]);
             return 0;
 
+        case  GET_CMD_STATUS:
+            return get_cmd_status();
+        
+        case GET_VID_PENDING:
+            return get_vid_pending_bit();
+        
+        case GET_CONTROLLER_KEY_STATUS:
+            uint8_t key_idx = (uint8_t) param[1];
+            if ((0 <= key_idx) && (key_idx <= 3))
+                return get_controller_status_key(key_idx);
+            else
+                return -1;  //invalid key index error
+
         default:
             // Handle unknown operation
-            set_last_error_code(ERROR_UNSUPPORTED_OPERATION);
-            return ERROR_UNSUPPORTED_OPERATION;
-            // return -1;  // Or an appropriate error code
+            // error handler
+            //report_error(ERROR_UNSUPPORTED_OPERATION);
+            //return ERROR_UNSUPPORTED_OPERATION;
+            return -1;  // Or an appropriate error code
     }
 }
