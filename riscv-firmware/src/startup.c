@@ -504,6 +504,12 @@ uint32_t c_syscall(uint32_t* param, char* params) {
            setLargeSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
            return 0;  // Success
 
+        case ERROR_HANDLER_OPERATION:
+          // Return the last error code and reset it
+           uint32_t error = get_last_error_code();
+           set_last_error_code(0); // Reset the error code after retrieval
+           return error;
+        
         case INIT_THREAD:
             // (uint32_t *stacktop, ThreadEntry entry, void *param
             InitThread((uint32_t*) param[1], (TThreadEntry) param[2], (void*) param[3]);
@@ -530,8 +536,8 @@ uint32_t c_syscall(uint32_t* param, char* params) {
         default:
             // Handle unknown operation
             // error handler
-            //report_error(ERROR_UNSUPPORTED_OPERATION);
-            //return ERROR_UNSUPPORTED_OPERATION;
-            return -1;  // Or an appropriate error code
+            report_error(ERROR_UNSUPPORTED_OPERATION);
+            return ERROR_UNSUPPORTED_OPERATION;
+            // return -1;  // Or an appropriate error code
     }
 }
