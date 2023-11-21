@@ -152,6 +152,18 @@ extern volatile int global;
 extern volatile uint32_t controller_status;
 volatile uint32_t interrupt_pending_reg;
 
+// Store the most recent error code
+volatile uint32_t last_error_code = 0;
+
+// Set the last error code
+void set_last_error_code(uint32_t error_code) {
+  last_error_code = error_code;
+}
+// Get the last error code
+uint32_t get_last_error_code() {
+  return last_error_code;
+}
+
 void c_interrupt_handler(void){
     uint64_t new_compare = (((uint64_t)MTIMECMP_HIGH)<<32) | MTIMECMP_LOW;
     new_compare += 100;
@@ -398,24 +410,17 @@ enum SysCallOperation {
     SET_SMALL_SPRITE = 8,
     SET_MEDIUM_SPRITE = 9,
     SET_LARGE_SPRITE = 10,
-    INIT_THREAD = 11,
-    SWITCH_THREAD = 12,
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
-    /*
+    
     if (param == NULL) {
         // Handle invalid input
-        return -1;  // Or an appropriate error code
+        // return -1;  // Or an appropriate error code
+        set_last_error_code(ERROR_NULL_PARAMS);
+        return -1;  // Null params error
     }
-   */
-    if (param == NULL) {
-        // Handle invalid input
-        // error handler
-        // report_error(ERROR_INVALID_PARAM); //Undefined reference
-        return ERROR_INVALID_PARAM;
-        //return -1;  // Or an appropriate error code
-    }
+
     switch (param[0]) {
         case GET_TIMER_TICKS:
             return get_machine_time();
@@ -435,7 +440,9 @@ uint32_t c_syscall(uint32_t* param, char* params) {
                 return 0;  // Success
             } else {
                 // Handle invalid mode value
-                return -1;  // Or an appropriate error code
+                // return -1;  // Or an appropriate error code
+                set_last_error_code(ERROR_INVALID_MODE_VALUE);
+                return -1;  // Invalid mode value error
             }
 
         //case SET_BACKGROUND:
@@ -448,7 +455,9 @@ uint32_t c_syscall(uint32_t* param, char* params) {
                 return 0;  // Success
             } else {
                 //Handle invalid params pointer
-                return -1;  // Or an appropriate error code
+                // return -1;  // Or an appropriate error code
+                set_last_error_code(ERROR_NULL_PARAMS);
+                return -1;  // Null params error
             }
 
         case SET_SMALL_SPRITE:
@@ -478,8 +487,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
 
         default:
             // Handle unknown operation
-            // error handler
-            // report_error(ERROR_UNSUPPORTED_OPERATION); // Undefined reference
+            set_last_error_code(ERROR_UNSUPPORTED_OPERATION);
             return ERROR_UNSUPPORTED_OPERATION;
             // return -1;  // Or an appropriate error code
     }
