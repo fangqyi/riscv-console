@@ -33,6 +33,7 @@ enum SysCallOperation
   SET_SMALL_SPRITE = 8,
   SET_MEDIUM_SPRITE = 9,
   SET_LARGE_SPRITE = 10,
+  ERROR_HANDLER_OPERATION = 11,
 };
 
 /* Graphics function */
@@ -179,3 +180,25 @@ void display_video_clock_period()
   snprintf(periodStr, sizeof(periodStr), "Video Clock Period: %d ms", period);
   SystemCall2(TIME_DISPLAY_PARAMS, periodStr);
 }
+
+/* Test Error Handler code
+void test_error_handling() {
+    // Trigger an error
+    uint64_t invalid_switch_mode_params[] = {SWITCH_MODE, 9}; // 9 is an invalid mode
+    SystemCall(invalid_switch_mode_params);
+
+    // Call the error handler
+    uint64_t error_handler_params[] = {ERROR_HANDLER_OPERATION};
+    uint32_t error_code = SystemCall(error_handler_params);
+
+    // Display the error code
+    char error_message[50];
+    snprintf(error_message, sizeof(error_message), "Error Code: %u", error_code);
+    uint64_t ERROR_DISPLAY_PARAMS[] = {DISPLAY_TEXT, 300};
+    SystemCall2(ERROR_DISPLAY_PARAMS, error_message);
+  }
+int main()
+{
+  test_error_handling();
+}
+*/
