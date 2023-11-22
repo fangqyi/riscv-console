@@ -536,7 +536,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
         default:
             // Handle unknown operation
             // error handler
-            report_error(ERROR_UNSUPPORTED_OPERATION);
+            set_last_error_code(ERROR_UNSUPPORTED_OPERATION);
             return ERROR_UNSUPPORTED_OPERATION;
             // return -1;  // Or an appropriate error code
     }
