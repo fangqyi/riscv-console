@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "error.h"
 
 extern uint8_t _erodata[];
@@ -127,7 +129,7 @@ volatile uint32_t cmd_status;
 volatile uint32_t interrupt_pending_reg;
 
 /*--------------------------------------------------------------------------------------------*/     
-void simple_medium_sprite(int16_t x, int16_t y, int16_t z);
+void simple_medium_sprite(uint16_t x, uint16_t y, uint16_t z);
 void init(void){
     uint8_t *Source = _erodata;
     uint8_t *Base = _data < _sdata ? _data : _sdata;
@@ -215,7 +217,7 @@ uint32_t get_machine_time(){
 }
 
 uint32_t get_controller_status() {
-    return controller_status;
+    return CONTROLLER;//controller_status;
 }
 
 uint32_t RED =  0xFFFF0000;
@@ -338,28 +340,32 @@ void set_large_sprite_palette(uint8_t palette_idx, uint32_t* data) {
 /* the type of control_ind is int or unit8_t */
 /* FIXME: should be either pixel or tile mode*/
 
+/*
 void setBackground(uint8_t image_idx, char* bg_pixel_data, uint8_t control_idx, uint8_t px_idx, uint8_t tile_idx, uint8_t sub_idx, uint16_t x, uint16_t y, uint8_t z,  uint8_t palette_idx, uint32_t* palette_data) {
     set_pixel_background_data(image_idx, bg_pixel_data);
     set_pixel_background_control(control_idx, px_idx, x, y, z, palette_idx);
     set_tile_background_control(control_idx, tile_idx, sub_idx, x, y, z, palette_idx);
     set_background_palette(palette_idx, palette_data);
-}
+}*/
 
-void setLargeSprite(uint8_t sprite_idx, uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
+void setLargeSprite(uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
+    MODE_CONTROL = GRAPHICS_MODE;
     set_large_sprite_control(sprite_ctrl_idx, sprite_data_idx, x, y, z, palette_idx);
-    set_large_sprite_data(sprite_idx, data);
+    set_large_sprite_data(sprite_data_idx, data);
     set_large_sprite_palette(palette_idx, palette_data);
 }
 
-void setMediumSprite(uint8_t sprite_idx, uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
+void setMediumSprite(uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
+    MODE_CONTROL = GRAPHICS_MODE;
     set_medium_sprite_control(sprite_ctrl_idx, sprite_data_idx, x, y, z, palette_idx);
-    set_medium_sprite_data(sprite_idx, data);
+    set_medium_sprite_data(sprite_data_idx, data);
     set_medium_sprite_palette(palette_idx, palette_data);
 }
 
-void setSmallSprite(uint8_t sprite_idx, uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
+void setSmallSprite(uint8_t* data, uint8_t sprite_ctrl_idx, uint8_t sprite_data_idx, uint16_t x, uint16_t y, uint16_t z, uint8_t palette_idx, uint32_t* palette_data){
+    MODE_CONTROL = GRAPHICS_MODE;
     set_small_sprite_control(sprite_ctrl_idx, sprite_data_idx, x, y, z, palette_idx);
-    set_small_sprite_data(sprite_idx, data);
+    set_small_sprite_data(sprite_data_idx, data);
     set_small_sprite_palette(palette_idx, palette_data);
 }
 
@@ -369,15 +375,15 @@ void switch_mode(uint32_t mode){
 }
 
 void simple_display_text(char *new_text, uint32_t start_idx){
-    uint32_t bounds  = 0x900>>2;
-
+    //uint32_t bounds  = 0x900>>2;
+    MODE_CONTROL = TEXT_MODE;
     uint32_t offset = 0;
-    while (new_text[offset] != '\0' && start_idx + offset < bounds){
+    while (new_text[offset] != '\0'){ //&& start_idx + offset < bounds){
         TEXT_DATA[start_idx + offset] = new_text[offset++];
     }
 }
 
-void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
+void simple_medium_sprite(uint16_t x, uint16_t y, uint16_t z){
     MODE_CONTROL = GRAPHICS_MODE;
 
     uint8_t sprite_data[0x400];
@@ -391,6 +397,9 @@ void simple_medium_sprite(int16_t x, int16_t y, int16_t z){
     palette_data[0] = GREEN;
     palette_data[1] = RED;
     
+    //char buf[64];
+    //snprintf(buf, sizeof(buf), "%d, %d, %d", x, y, z);
+    //simple_display_text(buf, 0);
     set_medium_sprite_palette(2, palette_data);
     set_medium_sprite_data(10, sprite_data);
     set_medium_sprite_control(5, 10, x, y, z, 2);
@@ -423,6 +432,7 @@ void OtherThreadFunction(void *){
 
 // Define constants for system call operations
 enum SysCallOperation {
+    TEST = 0,
     GET_TIMER_TICKS = 1,
     GET_MODE_CONTROL_REGISTER = 2,
     GET_CONTROLLER_REGISTER = 3,
@@ -438,7 +448,8 @@ enum SysCallOperation {
     SWITCH_THREAD = 13,
     GET_CMD_STATUS = 14,
     GET_VID_PENDING = 15,
-    GET_CONTROLLER_KEY_STATUS = 16
+    GET_CONTROLLER_KEY_STATUS = 16,
+    GET_GLOBAL_TIME = 17,
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
@@ -451,8 +462,15 @@ uint32_t c_syscall(uint32_t* param, char* params) {
     }
 
     switch (param[0]) {
+        case TEST:
+            simple_medium_sprite((uint16_t) param[1], (uint16_t) param[2], (uint16_t) param[3]);
+            return 0;
+
         case GET_TIMER_TICKS:
             return get_machine_time();
+        
+        case GET_GLOBAL_TIME:
+            return global;
 
         case GET_MODE_CONTROL_REGISTER:
             return MODE_CONTROL;
@@ -491,17 +509,17 @@ uint32_t c_syscall(uint32_t* param, char* params) {
 
         case SET_SMALL_SPRITE:
             // Validate parameters and call setSmallSprite
-            setSmallSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
+            setSmallSprite((uint8_t*) param[1], (uint8_t) param[2], (uint8_t) param[3], (uint16_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint8_t) param[7], (uint32_t*) param[8]);
             return 0;  // Success
 
         case SET_MEDIUM_SPRITE:
             // Validate parameters and call setLargeSprite
-           setMediumSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
+           setMediumSprite((uint8_t*) param[1], (uint8_t) param[2], (uint8_t) param[3], (uint16_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint8_t) param[7], (uint32_t*) param[8]);
            return 0;  // Success
 
         case SET_LARGE_SPRITE:
             // Validate parameters and call setLargeSprite
-           setLargeSprite((uint8_t) param[1], (uint8_t*) param[2], (uint8_t) param[3], (uint8_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint16_t) param[7], (uint8_t) param[8], (uint32_t*) param[9]);
+           setLargeSprite((uint8_t*) param[1], (uint8_t) param[2], (uint8_t) param[3], (uint16_t) param[4], (uint16_t) param[5], (uint16_t) param[6], (uint8_t) param[7], (uint32_t*) param[8]);
            return 0;  // Success
 
         case ERROR_HANDLER_OPERATION:
@@ -541,3 +559,4 @@ uint32_t c_syscall(uint32_t* param, char* params) {
             // return -1;  // Or an appropriate error code
     }
 }
+

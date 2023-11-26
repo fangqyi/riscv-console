@@ -4,7 +4,7 @@ _interrupt_handler:
     csrw    mscratch,ra
     csrr    ra,mcause
     addi    ra,ra,-11
-    bnez    ra,c_syscall_handle
+    bnez    ra,non_syscall_handle
     csrr    ra,mscratch
     csrw    mepc,ra
     csrw    mscratch,gp
@@ -16,7 +16,7 @@ _interrupt_handler:
     csrr    gp,mscratch
     csrr    ra,mepc
     mret
-c_syscall_handle:
+non_syscall_handle:
     csrr    ra,mscratch
     addi	sp,sp,-44
     sw      gp,40(sp)
