@@ -44,6 +44,9 @@ uint32_t SWITCH_GRAPHICS_PARAMS[] = {SWITCH_MODE, GRAPHICS_MODE};
 uint32_t SWITCH_TEXT_PARAMS[] = {SWITCH_MODE, TEXT_MODE};
 uint32_t GLOBAL_TIME_PARAMS[] = {GET_CONTROLLER_REGISTER};
 
+typedef void (*TThreadEntry)(void *);
+typedef uint32_t *TThreadContext;
+
 uint32_t SystemCall(uint32_t *param);
 uint32_t SystemCall2(uint32_t *param1, char *param2);
 void switch_graphics_mode();
@@ -62,6 +65,8 @@ void display_text(const char *new_text, const uint32_t start_idx);
 uint32_t get_controller_status();
 uint32_t get_cmd_status();
 uint8_t is_controller_key_pessed(uint8_t key_idx);
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param);
+void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext);
 
 int main()
 {
@@ -147,3 +152,10 @@ uint8_t is_controller_key_pessed(uint8_t key_idx)
   return SystemCall(GET_CONTROLLER_KEY_PARAMS);
 }
 
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param) {
+  return SystemCall(INIT_THREAD);
+}
+
+void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext) {
+  return SystemCall(SWITCH_THREAD);
+}
