@@ -67,6 +67,7 @@ uint32_t get_cmd_status();
 uint8_t is_controller_key_pessed(uint8_t key_idx);
 TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param);
 void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext);
+void error_handling();
 
 int main()
 {
@@ -158,4 +159,9 @@ TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param) {
 
 void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext) {
   return SystemCall(SWITCH_THREAD);
+}
+
+void error_handling() {
+  uint64_t error_handler_params[] = {ERROR_HANDLER_OPERATION};
+  uint32_t error_code = SystemCall(error_handler_params); // error_code can be displayed by display_text
 }
