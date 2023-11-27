@@ -163,5 +163,5 @@ void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext) {
 
 void error_handling() {
   uint64_t error_handler_params[] = {ERROR_HANDLER_OPERATION};
-  uint32_t error_code = SystemCall(error_handler_params);
+  uint32_t error_code = SystemCall(error_handler_params); // error_code can be displayed by display_text
 }
