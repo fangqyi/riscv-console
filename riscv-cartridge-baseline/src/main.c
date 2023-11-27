@@ -47,6 +47,11 @@ uint32_t MODE_PARAMS[] = {GET_MODE_CONTROL_REGISTER};
 uint32_t SWITCH_GRAPHICS_PARAMS[] = {SWITCH_MODE, GRAPHICS_MODE};
 uint32_t SWITCH_TEXT_PARAMS[] = {SWITCH_MODE, TEXT_MODE};
 uint32_t GLOBAL_TIME_PARAMS[] = {GET_CONTROLLER_REGISTER};
+uint32_t INIT_THREAD_PARAMS[] = {INIT_THREAD};
+uint32_t SWITCH_THREAD_PARAMS[] = {SWITCH_THREAD};
+uint32_t INIT_MUTEX_PARAMS[] = {INIT_MUTEX};
+uint32_t MUTEX_LOCK_PARAMS[] = {MUTEX_LOCK};
+uint32_t MUTEX_UNLOCK_PARAMS[] = {MUTEX_UNLOCK};
 
 typedef void (*TThreadEntry)(void *);
 typedef uint32_t *TThreadContext;
@@ -164,11 +169,13 @@ uint8_t is_controller_key_pessed(uint8_t key_idx)
   return SystemCall(GET_CONTROLLER_KEY_PARAMS);
 }
 
-TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param) {
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry, void *param) {
+  uint32_t INIT_THREAD_PARAMS[] = {stacktop, entry, param};
   return SystemCall(INIT_THREAD);
 }
 
 void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext) {
+  uint32_t SWITCH_THREAD_PARAMS[] = {oldcontext, newcontext};
   SystemCall(SWITCH_THREAD);
 }
 
@@ -178,13 +185,16 @@ void error_handling() {
 }
 
 void my_mutex_init(my_mutex_t *mutex) {
+  uint32_t INIT_MUTEX_PARAMS[] = {mutex};
   SystemCall(INIT_MUTEX);
 }
 
 void my_mutex_lock(my_mutex_t *mutex) {
+  uint32_t MUTEX_LOCK_PARAMS[] = {mutex};
   SystemCall(MUTEX_LOCK);
 }
 
 void my_mutex_unlock(my_mutex_t *mutex) {
+  uint32_t MUTEX_UNLOCK_PARAMS[] = {mutex};
   SystemCall(MUTEX_UNLOCK);
 }
