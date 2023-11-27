@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // Define TEXT_MODE and GRAPHICS_MODE
 #define TEXT_MODE 0x0
@@ -30,7 +31,10 @@ enum SysCallOperation
   GET_CMD_STATUS = 14,
   GET_VID_PENDING = 15,
   GET_CONTROLLER_KEY_STATUS = 16,
-  GET_GLOBAL_TIME = 17
+  GET_GLOBAL_TIME = 17,
+  INIT_MUTEX = 18,
+  MUTEX_LOCK = 19,
+  MUTEX_UNLOCK = 20,
 };
 
 /*Reading controller input*/
@@ -46,6 +50,9 @@ uint32_t GLOBAL_TIME_PARAMS[] = {GET_CONTROLLER_REGISTER};
 
 typedef void (*TThreadEntry)(void *);
 typedef uint32_t *TThreadContext;
+typedef struct {
+    volatile bool locked;
+} my_mutex_t;
 
 uint32_t SystemCall(uint32_t *param);
 uint32_t SystemCall2(uint32_t *param1, char *param2);
@@ -68,6 +75,10 @@ uint8_t is_controller_key_pessed(uint8_t key_idx);
 TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param);
 void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext);
 void error_handling();
+void my_mutex_init(my_mutex_t *mutex);
+void my_mutex_lock(my_mutex_t *mutex);
+void my_mutex_unlock(my_mutex_t *mutex);
+
 
 int main()
 {
@@ -158,10 +169,22 @@ TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param) {
 }
 
 void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext) {
-  return SystemCall(SWITCH_THREAD);
+  SystemCall(SWITCH_THREAD);
 }
 
 void error_handling() {
   uint64_t error_handler_params[] = {ERROR_HANDLER_OPERATION};
   uint32_t error_code = SystemCall(error_handler_params); // error_code can be displayed by display_text
+}
+
+void my_mutex_init(my_mutex_t *mutex) {
+  SystemCall(INIT_MUTEX);
+}
+
+void my_mutex_lock(my_mutex_t *mutex) {
+  SystemCall(MUTEX_LOCK);
+}
+
+void my_mutex_unlock(my_mutex_t *mutex) {
+  SystemCall(MUTEX_UNLOCK);
 }
