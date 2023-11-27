@@ -549,6 +549,7 @@ uint32_t c_syscall(uint32_t* param, char* params) {
             if ((0 <= key_idx) && (key_idx <= 3))
                 return get_controller_status_key(key_idx);
             else
+                set_last_error_code(ERROR_INVALID_INDEX);
                 return -1;  //invalid key index error
 
         default:
