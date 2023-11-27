@@ -6,14 +6,36 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/types.h>
-#include <sys/wait.h>
+#include <stdbool.h>
+
 
 volatile uint32_t controller_status = 0;
 volatile int global = 0;
 
-// int pthread_mutex_lock(pthread_mutex_t *mutex);
-// int pthread_mutex_unlock(pthread_mutex_t *mutex);
-// to here
+// typedef struct {
+//     volatile bool locked;
+// } my_mutex_t;
+
+// void my_mutex_init(my_mutex_t *mutex) {
+//     mutex->locked = false;
+// }
+
+// void my_mutex_lock(my_mutex_t *mutex) {
+//     while (true) {
+
+//         if (!mutex->locked) {
+//             mutex->locked = true;
+//             break; // Successfully acquired the mutex
+//         }
+
+//     }
+// }
+
+// void my_mutex_unlock(my_mutex_t *mutex) {
+
+//     mutex->locked = false;
+
+// }
 
 // cartridge setup
 volatile uint32_t *CartridgeStatus = (volatile uint32_t *)(0x4000001C);
@@ -22,9 +44,12 @@ void simple_medium_sprite(uint16_t x, uint16_t y, uint16_t z);
 void simple_display_text(char *new_text, uint32_t start_idx);
 uint32_t get_controller_status_key(uint8_t key_idx);
 
+
+
 int main()
 {
-
+  // my_mutex_t my_mutex;
+  // my_mutex_init(&my_mutex);
   // simple_medium_sprite(0,0,0);
   // loading cartridge
   /*char buf[80];
@@ -36,6 +61,13 @@ int main()
   simple_display_text(buf, 0);*/
   while (1)
   {
+    // int k = 1;
+    // my_mutex_lock(&my_mutex);
+    // simple_medium_sprite(10*k, 10*k, 0);
+    // my_mutex_unlock(&my_mutex);
+    // simple_medium_sprite(100, 100, 0);
+    // k++;
+
     /*if (get_controller_status_key(2))
     {
       simple_medium_sprite(50,50,0);
@@ -79,23 +111,3 @@ char *_sbrk(int numbytes)
     return NULL;
   }
 }
-
-// pthread_mutex_t locks[100];  // Assuming you have 100 locks
-
-// void lock(int lockno) {
-//     if (lockno < 0 || lockno >= 100) {
-//         // Invalid lock number
-//         return;
-//     }
-
-//     pthread_mutex_lock(&locks[lockno]);
-// }
-
-// void unlock(int lockno) {
-//     if (lockno < 0 || lockno >= 100) {
-//         // Invalid lock number
-//         return;
-//     }
-
-//     pthread_mutex_unlock(&locks[lockno]);
-// }

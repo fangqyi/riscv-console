@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "error.h"
+#include <stdbool.h>
 
 extern uint8_t _erodata[];
 extern uint8_t _data[];
@@ -428,6 +429,31 @@ void OtherThreadFunction(void *){
     }
 }
 
+typedef struct {
+    volatile bool locked;
+} my_mutex_t;
+
+void my_mutex_init(my_mutex_t *mutex) {
+    mutex->locked = false;
+}
+
+void my_mutex_lock(my_mutex_t *mutex) {
+    while (true) {
+
+        if (!mutex->locked) {
+            mutex->locked = true;
+            break; // Successfully acquired the mutex
+        }
+
+    }
+}
+
+void my_mutex_unlock(my_mutex_t *mutex) {
+
+    mutex->locked = false;
+
+}
+
 /* -------- Syscall -------- */
 
 // Define constants for system call operations
@@ -450,6 +476,9 @@ enum SysCallOperation {
     GET_VID_PENDING = 15,
     GET_CONTROLLER_KEY_STATUS = 16,
     GET_GLOBAL_TIME = 17,
+    INIT_MUTEX = 18,
+    MUTEX_LOCK = 19,
+    MUTEX_UNLOCK = 20,
 };
 
 uint32_t c_syscall(uint32_t* param, char* params) {
@@ -550,6 +579,18 @@ uint32_t c_syscall(uint32_t* param, char* params) {
                 return get_controller_status_key(key_idx);
             else
                 return -1;  //invalid key index error
+
+        case INIT_MUTEX:
+            my_mutex_init((my_mutex_t *) param[1]);
+            return 0;
+
+        case MUTEX_LOCK:
+            my_mutex_lock((my_mutex_t *) param[1]);
+            return 0;
+
+        case MUTEX_UNLOCK:
+            my_mutex_unlock((my_mutex_t *) param[1]);
+            return 0;
 
         default:
             // Handle unknown operation
