@@ -77,12 +77,12 @@ void display_text(const char *new_text, const uint32_t start_idx);
 uint32_t get_controller_status();
 uint32_t get_cmd_status();
 uint8_t is_controller_key_pessed(uint8_t key_idx);
-TThreadContext InitThread(const POS_TYPE *pos, uint32_t *stacktop, TThreadEntry entry,void *param);
-void SwitchThread(const POS_TYPE *pos, TThreadContext *oldcontext, TThreadContext newcontext);
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param);
+void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext);
 void error_handling();
-void my_mutex_init(const POS_TYPE *pos, my_mutex_t *mutex);
-void my_mutex_lock(const POS_TYPE *pos, my_mutex_t *mutex);
-void my_mutex_unlock(const POS_TYPE *pos, my_mutex_t *mutex);
+void my_mutex_init(my_mutex_t *mutex);
+void my_mutex_lock(my_mutex_t *mutex);
+void my_mutex_unlock(my_mutex_t *mutex);
 
 
 int main()
@@ -169,12 +169,12 @@ uint8_t is_controller_key_pessed(uint8_t key_idx)
   return SystemCall(GET_CONTROLLER_KEY_PARAMS);
 }
 
-TThreadContext InitThread(const POS_TYPE *pos, uint32_t *stacktop, TThreadEntry entry, void *param) {
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry, void *param) {
   uint32_t INIT_THREAD_PARAMS[] = {INIT_THREAD, stacktop, entry, param};
   return SystemCall(INIT_THREAD_PARAMS);
 }
 
-void SwitchThread(const POS_TYPE *pos, TThreadContext *oldcontext, TThreadContext newcontext) {
+void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext) {
   uint32_t SWITCH_THREAD_PARAMS[] = {SWITCH_THREAD, oldcontext, newcontext};
   SystemCall(SWITCH_THREAD_PARAMS);
 }
@@ -184,17 +184,17 @@ void error_handling() {
   uint32_t error_code = SystemCall(ERROR_HANDLER_PARAMS); // error_code can be displayed by display_text
 }
 
-void my_mutex_init(const POS_TYPE *pos, my_mutex_t *mutex) {
+void my_mutex_init(my_mutex_t *mutex) {
   uint32_t INIT_MUTEX_PARAMS[] = {INIT_MUTEX, mutex};
   SystemCall(INIT_MUTEX_PARAMS);
 }
 
-void my_mutex_lock(const POS_TYPE *pos, my_mutex_t *mutex) {
+void my_mutex_lock(my_mutex_t *mutex) {
   uint32_t MUTEX_LOCK_PARAMS[] = {MUTEX_LOCK, mutex};
   SystemCall(MUTEX_LOCK_PARAMS);
 }
 
-void my_mutex_unlock(const POS_TYPE *pos, my_mutex_t *mutex) {
+void my_mutex_unlock(my_mutex_t *mutex) {
   uint32_t MUTEX_UNLOCK_PARAMS[] = {MUTEX_UNLOCK, mutex};
   SystemCall(MUTEX_UNLOCK_PARAMS);
 }
