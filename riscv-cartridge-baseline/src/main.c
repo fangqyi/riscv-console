@@ -20,7 +20,7 @@ enum SysCallOperation
   GET_CONTROLLER_REGISTER = 3,
   GET_INTERRUPT_PENDING_REGISTER = 4,
   SWITCH_MODE = 5,
-  //SET_BACKGROUND = 6,
+  SET_BACKGROUND = 6,
   DISPLAY_TEXT = 7,
   SET_SMALL_SPRITE = 8,
   SET_MEDIUM_SPRITE = 9,
@@ -35,6 +35,7 @@ enum SysCallOperation
   INIT_MUTEX = 18,
   MUTEX_LOCK = 19,
   MUTEX_UNLOCK = 20,
+  SET_TILE_BACKGROUND = 21
 };
 
 /*Reading controller input*/
@@ -55,8 +56,9 @@ uint32_t MUTEX_UNLOCK_PARAMS[] = {MUTEX_UNLOCK};
 
 typedef void (*TThreadEntry)(void *);
 typedef uint32_t *TThreadContext;
-typedef struct {
-    volatile bool locked;
+typedef struct
+{
+  volatile bool locked;
 } my_mutex_t;
 
 uint32_t SystemCall(uint32_t *param);
@@ -77,13 +79,12 @@ void display_text(const char *new_text, const uint32_t start_idx);
 uint32_t get_controller_status();
 uint32_t get_cmd_status();
 uint8_t is_controller_key_pessed(uint8_t key_idx);
-TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry,void *param);
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry, void *param);
 void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext);
 void error_handling();
 void my_mutex_init(my_mutex_t *mutex);
 void my_mutex_lock(my_mutex_t *mutex);
 void my_mutex_unlock(my_mutex_t *mutex);
-
 
 int main()
 {
@@ -108,7 +109,7 @@ void switch_text_mode()
 
 uint32_t my_rand(int range)
 {
-  return rand()%range;
+  return rand() % range;
 }
 
 void set_medium_sprite(const POS_TYPE *pos, const uint8_t *sprite_data, const uint32_t *palette_data, const uint8_t CONTROL_IDX, const uint8_t PALETTE_IDX, const uint8_t DATA_IDX)
@@ -132,23 +133,35 @@ void set_large_sprite(const POS_TYPE *pos, const uint8_t *sprite_data, const uin
   SystemCall(LARGE_SPRITE_PARAMS);
 }
 
-uint32_t get_time(){
+void set_pixel_background(const POS_TYPE *pos, const uint8_t *background_data, const uint32_t *palette_data, const uint8_t CONTROL_IDX, const uint8_t PALETTE_IDX, const uint8_t DATA_IDX)
+{
+  switch_graphics_mode();
+  uint32_t BACKGROUND_PARAMS[] = {SET_BACKGROUND, DATA_IDX, background_data, CONTROL_IDX, pos->x, pos->y, pos->z, PALETTE_IDX, palette_data};
+  SystemCall(BACKGROUND_PARAMS);
+}
+
+uint32_t get_time()
+{
   return SystemCall(TIME_PARAMS);
 }
 
-uint32_t get_global(){
+uint32_t get_global()
+{
   return SystemCall(GLOBAL_TIME_PARAMS);
 }
 
-uint32_t get_interrupt(){
+uint32_t get_interrupt()
+{
   return SystemCall(INTERRUPT_PARAMS);
 }
 
-uint32_t get_vid_bit(){
+uint32_t get_vid_bit()
+{
   return SystemCall(VID_PARAMS);
 }
 
-void display_text(const char *new_text, const uint32_t start_idx) {
+void display_text(const char *new_text, const uint32_t start_idx)
+{
   uint32_t DISPLAY_PARAMS[] = {DISPLAY_TEXT, start_idx};
   SystemCall2(DISPLAY_PARAMS, start_idx);
 }
@@ -158,43 +171,50 @@ uint32_t get_controller_status()
   return SystemCall(CONTROLLER_PARAMS);
 }
 
-uint32_t get_cmd_status(){
+uint32_t get_cmd_status()
+{
   return SystemCall(CMD_PARAMS);
 }
 
-//for AWXD keys only
+// for AWXD keys only
 uint8_t is_controller_key_pessed(uint8_t key_idx)
 {
   uint32_t GET_CONTROLLER_KEY_PARAMS[] = {GET_CONTROLLER_KEY_STATUS, key_idx};
   return SystemCall(GET_CONTROLLER_KEY_PARAMS);
 }
 
-TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry, void *param) {
+TThreadContext InitThread(uint32_t *stacktop, TThreadEntry entry, void *param)
+{
   uint32_t INIT_THREAD_PARAMS[] = {INIT_THREAD, stacktop, entry, param};
   return SystemCall(INIT_THREAD_PARAMS);
 }
 
-void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext) {
+void SwitchThread(TThreadContext *oldcontext, TThreadContext newcontext)
+{
   uint32_t SWITCH_THREAD_PARAMS[] = {SWITCH_THREAD, oldcontext, newcontext};
   SystemCall(SWITCH_THREAD_PARAMS);
 }
 
-void error_handling() {
+void error_handling()
+{
   uint32_t ERROR_HANDLER_PARAMS[] = {ERROR_HANDLER_OPERATION};
   uint32_t error_code = SystemCall(ERROR_HANDLER_PARAMS); // error_code can be displayed by display_text
 }
 
-void my_mutex_init(my_mutex_t *mutex) {
+void my_mutex_init(my_mutex_t *mutex)
+{
   uint32_t INIT_MUTEX_PARAMS[] = {INIT_MUTEX, mutex};
   SystemCall(INIT_MUTEX_PARAMS);
 }
 
-void my_mutex_lock(my_mutex_t *mutex) {
+void my_mutex_lock(my_mutex_t *mutex)
+{
   uint32_t MUTEX_LOCK_PARAMS[] = {MUTEX_LOCK, mutex};
   SystemCall(MUTEX_LOCK_PARAMS);
 }
 
-void my_mutex_unlock(my_mutex_t *mutex) {
+void my_mutex_unlock(my_mutex_t *mutex)
+{
   uint32_t MUTEX_UNLOCK_PARAMS[] = {MUTEX_UNLOCK, mutex};
   SystemCall(MUTEX_UNLOCK_PARAMS);
 }

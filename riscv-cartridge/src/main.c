@@ -7,10 +7,10 @@
 #define GRAPHICS_MODE 0x1
 
 /* Graphics parameters */
-//#define WIDTH 512  // Grid width of 512
-//#define HEIGHT 288 // Grid height of 288
-//#define MEDIUM_SPRITE_SIZE 16
-//#define SMALL_SPRITE_SIZE 8
+// #define WIDTH 512  // Grid width of 512
+// #define HEIGHT 288 // Grid height of 288
+// #define MEDIUM_SPRITE_SIZE 16
+// #define SMALL_SPRITE_SIZE 8
 #define PLAYER_1_SPRITE_DATA_IDX 1
 #define PLAYER_1_SPRITE_PALETTE_IDX 1
 #define PLAYER_1_SPRITE_CONTROL_IDX 1
@@ -20,17 +20,22 @@
 #define TARGET_SPRITE_DATA_IDX 3
 #define TARGET_SPRITE_PALETTE_IDX 3
 #define TARGET_SPRITE_CONTROL_IDX 3
+#define BG_CONTROL_IDX 0
+#define BG_PIXEL_DATA_IDX 0
+#define BG_PALETTE_IDX 0
+#define BG_IMAGE_IDX 0
 #define COL_MAGIC_LIMIT 460
 #define ROW_MAGIC_LIMIT 230
-#define MEDIUM_MAGIC_SIZE 30 
+#define MEDIUM_MAGIC_SIZE 30
 uint32_t RED = 0xFFFF0000;
 uint32_t BLUE = 0xFF3377FF;
 uint32_t GREEN = 0xFF33DD33;
+uint32_t DARK_GREEN = 0xFF006600;
 uint32_t WHITE = 0xFFFFFFFF;
 uint32_t YELLOW = 0xFFFFFF00;
 uint32_t ORANGE = 0xFFFF7F50;
 uint32_t DEEP_PINK = 0xFFFF1493;
-uint32_t LIGHT_PINK = 0xFFFFB6C1; 
+uint32_t LIGHT_PINK = 0xFFFFB6C1;
 uint32_t HOT_PINK = 0xFFFF69B4;
 
 typedef struct POS_TYPE
@@ -42,6 +47,7 @@ uint32_t SystemCall(uint32_t *param);
 uint32_t SystemCall2(uint32_t *param1, char *param2);
 void set_player_sprite_1(POS_TYPE *pos);
 void set_target_sprite(POS_TYPE *pos);
+void set_background();
 void control_movement_1(POS_TYPE *player_pos);
 uint32_t display_time_remain(uint32_t start_time);
 void wait_for_any_key_input();
@@ -76,7 +82,11 @@ enum SysCallOperation
   GET_CMD_STATUS = 14,
   GET_VID_PENDING = 15,
   GET_CONTROLLER_KEY_STATUS = 16,
-  GET_GLOBAL_TIME = 17
+  GET_GLOBAL_TIME = 17,
+  INIT_MUTEX = 18,
+  MUTEX_LOCK = 19,
+  MUTEX_UNLOCK = 20,
+  SET_TILE_BACKGROUND = 21,
 };
 
 volatile uint32_t controller_status = 0;
@@ -92,24 +102,24 @@ uint32_t GLOBAL_TIME_PARAMS[] = {GET_CONTROLLER_REGISTER};
 
 int main()
 {
-  show_start_screen(); 
-  wait_for_any_key_input(); 
+  show_start_screen();
+  wait_for_any_key_input();
+  set_background();
   while (1)
   {
     uint32_t score = 0;
     score = game_loop();
     show_end_screen(score);
-    wait_for_i_key_input(); 
+    wait_for_i_key_input();
   }
   return 0;
 }
 
 uint32_t game_loop()
 {
-  int global;
-  int last_global = 0;
   int32_t score = 0;
-  int32_t remaining_time = 60; // 60 seconds (firmware)
+  // 100000 ticks is about 60 seconds - I don't know why
+  int32_t time_limit = 100000; // 60 seconds (firmware)
   // Initial position of player 1, 2
   POS_TYPE player_1_pos = {.x = 0, .y = 0, .z = 0};
   POS_TYPE player_2_pos = {.x = COL_MAGIC_LIMIT, .y = ROW_MAGIC_LIMIT, .z = 1};
@@ -119,22 +129,19 @@ uint32_t game_loop()
 
   uint32_t TIME_PARAMS[] = {GET_TIMER_TICKS};
   uint32_t start_time = SystemCall(TIME_PARAMS); // Start timer
-  while (remaining_time > 0)                         
+  uint32_t current_time = SystemCall(TIME_PARAMS);
+  while (current_time - start_time < time_limit)
   {
     /* Handle user input for player movement*/
-    global = SystemCall(GLOBAL_TIME_PARAMS);
-    if (global != last_global)
+    current_time = SystemCall(TIME_PARAMS);
+    controller_status = get_controller_status();
+    if (controller_status)
     {
-      controller_status = get_controller_status();
-      if (controller_status)
-      {
-        control_movement_1(&player_1_pos);
-        set_player_sprite_1(&player_1_pos);
-        score = score_update_1(score, &player_1_pos, &target_pos);
-      }
-      last_global = global;
-      remaining_time --;
+      control_movement_1(&player_1_pos);
+      set_player_sprite_1(&player_1_pos);
+      score = score_update_1(score, &player_1_pos, &target_pos);
     }
+
     /*Display the video clock period*/
     // display_video_clock_period();
 
@@ -163,8 +170,8 @@ void switch_text_mode()
 
 uint32_t score_update_1(uint32_t score, const POS_TYPE *player_pos, POS_TYPE *target_pos)
 {
-  if ((player_pos->x+MEDIUM_MAGIC_SIZE >= target_pos->x) && (player_pos->x <=  target_pos->x+MEDIUM_MAGIC_SIZE) &&
-      (player_pos->y+MEDIUM_MAGIC_SIZE >= target_pos->y) && (player_pos->y <= target_pos->y+MEDIUM_MAGIC_SIZE))
+  if ((player_pos->x + MEDIUM_MAGIC_SIZE >= target_pos->x) && (player_pos->x <= target_pos->x + MEDIUM_MAGIC_SIZE) &&
+      (player_pos->y + MEDIUM_MAGIC_SIZE >= target_pos->y) && (player_pos->y <= target_pos->y + MEDIUM_MAGIC_SIZE))
   {
     /* Update score and position of target point if eaten */
     score++;
@@ -177,38 +184,42 @@ uint32_t score_update_1(uint32_t score, const POS_TYPE *player_pos, POS_TYPE *ta
 
 uint32_t my_rand(int range)
 {
-  //uint32_t TIME_PARAMS[] = {GET_TIMER_TICKS};
-  //uint32_t rand = SystemCall(TIME_PARAMS) % range;
-  return rand()%range;
+  // uint32_t TIME_PARAMS[] = {GET_TIMER_TICKS};
+  // uint32_t rand = SystemCall(TIME_PARAMS) % range;
+  return rand() % range;
 }
 
 void control_movement_1(POS_TYPE *player_pos)
 {
   if (controller_status & 0x1)
   { // 'a' -> LEFT'
-    player_pos->x -= MEDIUM_MAGIC_SIZE/2;
-    if (player_pos->x <= 0){
+    player_pos->x -= MEDIUM_MAGIC_SIZE / 15;
+    if (player_pos->x <= 0)
+    {
       player_pos->x = COL_MAGIC_LIMIT;
     }
   }
   if (controller_status & 0x2)
   { // 'w' -> UP
-    player_pos->y -= MEDIUM_MAGIC_SIZE/2;
-    if (player_pos->y <= 0){
+    player_pos->y -= MEDIUM_MAGIC_SIZE / 15;
+    if (player_pos->y <= 0)
+    {
       player_pos->y = ROW_MAGIC_LIMIT;
     }
   }
   if (controller_status & 0x4)
   { // 'x' -> DOWN
-    player_pos->y += MEDIUM_MAGIC_SIZE/2;
-    if (player_pos->y >= ROW_MAGIC_LIMIT){
-      player_pos->y = 0; 
+    player_pos->y += MEDIUM_MAGIC_SIZE / 15;
+    if (player_pos->y >= ROW_MAGIC_LIMIT)
+    {
+      player_pos->y = 0;
     }
   }
   if (controller_status & 0x8)
   { // d' -> RIGHT
-    player_pos->x += MEDIUM_MAGIC_SIZE/2;
-    if (player_pos->x >= COL_MAGIC_LIMIT){
+    player_pos->x += MEDIUM_MAGIC_SIZE / 15;
+    if (player_pos->x >= COL_MAGIC_LIMIT)
+    {
       player_pos->x = 0;
     }
   }
@@ -223,7 +234,7 @@ void set_player_sprite_1(POS_TYPE *pos)
     for (int j = 0; j < 0x20; j++)
     {
       palette_data[(i * 0x20 + j) % 0x100] = 0;
-      sprite_data[i * 0x20 + j] = (i+j)%5;
+      sprite_data[i * 0x20 + j] = (i + j) % 5;
     }
   }
   palette_data[0] = RED;
@@ -246,7 +257,7 @@ void set_target_sprite(POS_TYPE *pos)
     {
       palette_data[(i * 0x20 + j) % 0x100] = 0;
 
-      sprite_data[i * 0x20 + j] = my_rand(3);//i < 0x10 ? (j < 0x10 ? 0 : 1) : (j < 0x10 ? 2 : 3);
+      sprite_data[i * 0x20 + j] = my_rand(3); // i < 0x10 ? (j < 0x10 ? 0 : 1) : (j < 0x10 ? 2 : 3);
     }
   }
   palette_data[0] = LIGHT_PINK;
@@ -256,6 +267,29 @@ void set_target_sprite(POS_TYPE *pos)
   switch_graphics_mode();
   uint32_t MEDIUM_SPRITE_PARAMS[] = {SET_MEDIUM_SPRITE, sprite_data, TARGET_SPRITE_CONTROL_IDX, TARGET_SPRITE_DATA_IDX, pos->x, pos->y, pos->z, TARGET_SPRITE_PALETTE_IDX, palette_data};
   SystemCall(MEDIUM_SPRITE_PARAMS);
+}
+
+void set_background()
+{
+  uint8_t background_data[0x24000];
+  uint32_t palette_data[0x100];
+  for (int i = 0; i < 0x10; i++)
+  {
+    for (int j = 0; j < 0x10; j++)
+    {
+      palette_data[(i * 0x20 + j) % 0x100] = 0;
+    }
+  }
+  for (int i = 0; i < 0x24000; i++)
+  {
+    background_data[i] = i % 16 < 8 ? 0 : 1;
+  }
+  palette_data[0] = DARK_GREEN;
+  palette_data[1] = GREEN;
+
+  switch_graphics_mode();
+  uint32_t BG_PARAMS[] = {SET_BACKGROUND, BG_IMAGE_IDX, background_data, BG_CONTROL_IDX, BG_PIXEL_DATA_IDX, 0, 0, 0, BG_PALETTE_IDX, palette_data};
+  SystemCall(BG_PARAMS);
 }
 
 uint32_t display_time_remain(uint32_t start_time)
@@ -271,7 +305,8 @@ uint32_t display_time_remain(uint32_t start_time)
   return 60 - (period - start_time) / 1000;
 }
 
-void show_start_screen() {
+void show_start_screen()
+{
   uint32_t DISPLAY_PARAMS[] = {DISPLAY_TEXT, 0};
   // Convert the period integer to a string and print it to VIDEO_MEMORY
   char welcome_text[200]; //
@@ -297,17 +332,17 @@ void wait_for_any_key_input()
 
 void wait_for_i_key_input()
 {
-  while (get_controller_status()&0x20)
-    ; 
+  while (get_controller_status() & 0x20)
+    ;
 }
-
 
 uint32_t get_controller_status()
 {
   return SystemCall(CONTROLLER_PARAMS);
 }
 
-uint32_t get_cmd_status(){
+uint32_t get_cmd_status()
+{
   return SystemCall(CMD_PARAMS);
 }
 uint8_t is_controller_key_pessed(uint8_t key_idx)
