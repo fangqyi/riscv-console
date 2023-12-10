@@ -7,8 +7,8 @@
 #define GRAPHICS_MODE 0x1
 
 /* Graphics parameters */
-// #define WIDTH 512  // Grid width of 512
-// #define HEIGHT 288 // Grid height of 288
+#define WIDTH 512  // Grid width of 512
+#define HEIGHT 288 // Grid height of 288
 // #define MEDIUM_SPRITE_SIZE 16
 // #define SMALL_SPRITE_SIZE 8
 #define PLAYER_1_SPRITE_DATA_IDX 1
@@ -90,6 +90,7 @@ enum SysCallOperation
 };
 
 volatile uint32_t controller_status = 0;
+void custom_delay(int milliseconds);
 
 /*Reading controller input*/
 uint32_t CONTROLLER_PARAMS[] = {GET_CONTROLLER_REGISTER};
@@ -110,7 +111,9 @@ int main()
     uint32_t score = 0;
     score = game_loop();
     show_end_screen(score);
-    wait_for_i_key_input();
+    custom_delay(1000);
+    wait_for_any_key_input();
+    // wait_for_i_key_input(); // Wait here until 'i' key is pressed
   }
   return 0;
 }
@@ -118,22 +121,18 @@ int main()
 uint32_t game_loop()
 {
   int32_t score = 0;
-  // 100000 ticks is about 60 seconds - I don't know why
-  int32_t time_limit = 100000; // 60 seconds (firmware)
-  // Initial position of player 1, 2
-  POS_TYPE player_1_pos = {.x = 0, .y = 0, .z = 0};
-  POS_TYPE player_2_pos = {.x = COL_MAGIC_LIMIT, .y = ROW_MAGIC_LIMIT, .z = 1};
-  POS_TYPE target_pos = {.x = my_rand(COL_MAGIC_LIMIT), .y = my_rand(ROW_MAGIC_LIMIT), .z = 3};
-  set_player_sprite_1(&player_1_pos);
-  set_target_sprite(&target_pos); // Draw initial target
+  int32_t time_limit = 10000; // 60 seconds (firmware)
 
-  uint32_t TIME_PARAMS[] = {GET_TIMER_TICKS};
+  POS_TYPE player_1_pos = {.x = 0, .y = 0, .z = 0};
+  POS_TYPE target_pos = {.x = my_rand(COL_MAGIC_LIMIT), .y = my_rand(ROW_MAGIC_LIMIT), .z = 3};
+
+  set_player_sprite_1(&player_1_pos);
+  set_target_sprite(&target_pos);
+
   uint32_t start_time = SystemCall(TIME_PARAMS); // Start timer
-  uint32_t current_time = SystemCall(TIME_PARAMS);
-  while (current_time - start_time < time_limit)
+
+  while (SystemCall(TIME_PARAMS) - start_time < time_limit)
   {
-    /* Handle user input for player movement*/
-    current_time = SystemCall(TIME_PARAMS);
     controller_status = get_controller_status();
     if (controller_status)
     {
@@ -142,14 +141,10 @@ uint32_t game_loop()
       score = score_update_1(score, &player_1_pos, &target_pos);
     }
 
-    /*Display the video clock period*/
-    // display_video_clock_period();
-
-    /* Update the countdown timer and check for time-up condition */
-    // remainingTime = display_time_remain(start_time);
-    //}
+    // display_time_remain(start_time); // Update the countdown timer
   }
-  return score;
+
+  return score; // Return the score after time limit
 }
 
 void switch_graphics_mode()
@@ -265,8 +260,10 @@ void set_target_sprite(POS_TYPE *pos)
   palette_data[2] = DEEP_PINK;
 
   switch_graphics_mode();
-  uint32_t MEDIUM_SPRITE_PARAMS[] = {SET_MEDIUM_SPRITE, sprite_data, TARGET_SPRITE_CONTROL_IDX, TARGET_SPRITE_DATA_IDX, pos->x, pos->y, pos->z, TARGET_SPRITE_PALETTE_IDX, palette_data};
-  SystemCall(MEDIUM_SPRITE_PARAMS);
+  uint32_t SMALL_SPRITE_PARAMS[] = {SET_SMALL_SPRITE, sprite_data, TARGET_SPRITE_CONTROL_IDX, TARGET_SPRITE_DATA_IDX, pos->x, pos->y, pos->z, TARGET_SPRITE_PALETTE_IDX, palette_data};
+
+  // uint32_t MEDIUM_SPRITE_PARAMS[] = {SET_MEDIUM_SPRITE, sprite_data, TARGET_SPRITE_CONTROL_IDX, TARGET_SPRITE_DATA_IDX, pos->x, pos->y, pos->z, TARGET_SPRITE_PALETTE_IDX, palette_data};
+  SystemCall(SMALL_SPRITE_PARAMS);
 }
 
 void set_background()
@@ -290,19 +287,34 @@ void set_background()
   switch_graphics_mode();
   uint32_t BG_PARAMS[] = {SET_BACKGROUND, BG_IMAGE_IDX, background_data, BG_CONTROL_IDX, BG_PIXEL_DATA_IDX, 0, 0, 0, BG_PALETTE_IDX, palette_data};
   SystemCall(BG_PARAMS);
+  // int32_t TIME_PARAMS[] = {GET_TIMER_TICKS};
+  // uint32_t start_time = SystemCall(TIME_PARAMS);
+  // display_time_remain(start_time);
 }
 
 uint32_t display_time_remain(uint32_t start_time)
 {
+  uint32_t current_time = SystemCall(TIME_PARAMS);
+  uint32_t elapsed_time = (current_time - start_time) / 1000; // Assuming 1000 ticks is 1 second
+  uint32_t remaining_time = 60 - elapsed_time;
+
+  // Display the remaining time
+  char time_str[40];
+  snprintf(time_str, sizeof(time_str), "Time remaining: %d s", remaining_time);
+  // Here you need to implement the logic to display this string in your game's graphics mode.
+  // For now, assuming it's a simple text display:
   switch_text_mode();
-  uint32_t TIME_PARAMS[] = {GET_TIMER_TICKS};
-  uint32_t period = SystemCall(TIME_PARAMS);
   uint32_t TIME_DISPLAY_PARAMS[] = {DISPLAY_TEXT, 41};
-  // Convert the period integer to a string and print it to VIDEO_MEMORY
-  char periodStr[40]; //
-  snprintf(periodStr, sizeof(periodStr), "Time remain: %d s", 100 - (period - start_time) / 1000);
-  SystemCall2(TIME_DISPLAY_PARAMS, periodStr);
-  return 60 - (period - start_time) / 1000;
+  SystemCall2(TIME_DISPLAY_PARAMS, time_str);
+
+  return remaining_time;
+}
+
+void custom_delay(int milliseconds)
+{
+  uint32_t end_time = SystemCall(TIME_PARAMS) + milliseconds;
+  while (SystemCall(TIME_PARAMS) < end_time)
+    ;
 }
 
 void show_start_screen()
@@ -310,7 +322,7 @@ void show_start_screen()
   uint32_t DISPLAY_PARAMS[] = {DISPLAY_TEXT, 0};
   // Convert the period integer to a string and print it to VIDEO_MEMORY
   char welcome_text[200]; //
-  snprintf(welcome_text, sizeof(welcome_text), "Welcome! Game rule: try to eat as many pink squares as possible in 100 secs. Move with AXWD. Good luck : ) Press ANYKEY to continue");
+  snprintf(welcome_text, sizeof(welcome_text), "Welcome! Excellent gamer. Please read the following game rule. Game rule: try to eat as many pink squares as possible in 60 secs. Move by pressing WADX keys. Good luck : ) Press W/A/D/X to start");
   SystemCall2(DISPLAY_PARAMS, welcome_text);
 }
 
@@ -320,9 +332,11 @@ void show_end_screen(uint32_t score)
   switch_text_mode();
   uint32_t SCORE_DISPLAY_PARAMS[] = {DISPLAY_TEXT, 0};
   char end_text[200];
-  snprintf(end_text, sizeof(end_text), "Game is over! YOU (player 1) GOT %d POINTS. Press i to continue                                                                                       ", score);
+  snprintf(end_text, sizeof(end_text), "Game is over! YOU (player 1) GOT %d POINTS. Press W/A/X/D/U/I/J/K to continue                                                                                                                                                                                                                     ", score);
   SystemCall2(SCORE_DISPLAY_PARAMS, end_text);
 }
+
+
 
 void wait_for_any_key_input()
 {
@@ -333,7 +347,7 @@ void wait_for_any_key_input()
 void wait_for_i_key_input()
 {
   while (get_controller_status() & 0x20)
-    ;
+  ;
 }
 
 uint32_t get_controller_status()
