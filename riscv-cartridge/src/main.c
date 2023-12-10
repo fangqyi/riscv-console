@@ -121,7 +121,7 @@ int main()
 uint32_t game_loop()
 {
   int32_t score = 0;
-  int32_t time_limit = 10000; // 60 seconds (firmware)
+  int32_t time_limit = 60000; // 60 seconds (firmware)
 
   POS_TYPE player_1_pos = {.x = 0, .y = 0, .z = 0};
   POS_TYPE target_pos = {.x = my_rand(COL_MAGIC_LIMIT), .y = my_rand(ROW_MAGIC_LIMIT), .z = 3};
